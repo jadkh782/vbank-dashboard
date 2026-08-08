@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/orch/:path*",
+      "destination": "https://cloud.uipath.com/YOUR-ORG/YOUR-TENANT/orchestrator_/:path*"
+    },
+    {
+      "source": "/identity/:path*",
+      "destination": "https://cloud.uipath.com/identity_/:path*"
+    }
+  ]
+}

@@ -1,0 +1,2100 @@
+/* ── Exelentic – Vbank · design tokens ────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* Planes — warm paper under near-white stock, so surfaces lift by value
+     rather than by shadow. The whole system is ruled, not floated. */
+  --page: #f2f1ed;
+  --surface: #fdfdfb;
+  --surface-raised: #ffffff;
+  --surface-sunk: #f7f6f2;
+
+  /* Ink — carries a slight navy cast so text and brand share a temperature.
+     Every step that carries text clears 4.5:1 on --page and on --surface.
+     Hierarchy is made with weight, size and case, not with pale greys:
+     a 10px label washed out to 2:1 is the tell of a template, and it is
+     also unreadable. --ink-faint is the only decorative step and must
+     never be used for text. */
+  --ink: #111820;
+  --ink-2: #454e59;
+  --ink-3: #565d66;
+  --ink-4: #646b75;
+  --ink-faint: #9aa0a8;
+
+  /* Chrome */
+  --grid: #e4e3dd;
+  --baseline: #c0bfb6;
+  --border: rgba(17, 24, 32, 0.1);
+  --border-strong: rgba(17, 24, 32, 0.18);
+
+  /* Rules — the structural language of the layout. Hairlines separate,
+     the heavy rule opens a section, the brand rule caps the page. */
+  --rule: rgba(17, 24, 32, 0.09);
+  --rule-2: rgba(17, 24, 32, 0.16);
+  --rule-strong: rgba(17, 24, 32, 0.42);
+
+  /* Brand */
+  --brand: #0f2438; /* Exelentic deep navy */
+  --brand-2: #1d4266;
+  --brand-ink: #ffffff; /* text on brand fills */
+  --brand-wash: rgba(15, 36, 56, 0.055);
+  --accent: #2a78d6; /* series-1 blue */
+  --accent-wash: rgba(42, 120, 214, 0.07);
+
+  /* Job / transaction state colors (status palette — fixed) */
+  --state-successful: #0ca30c;
+  --state-faulted: #d03b3b;
+  --state-stopped: #ec835a;
+  --state-running: #2a78d6;
+  --state-pending: #898781;
+  --state-suspended: #4a3aa7;
+  --state-warning: #c98500;
+
+  --delta-good: #006300;
+  --delta-bad: #b32d2d;
+
+  --shadow-card: none;
+  --shadow-pop: 0 10px 34px rgba(15, 36, 56, 0.15), 0 1px 3px rgba(15, 36, 56, 0.08);
+
+  /* Type */
+  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Source Serif 4 Variable', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+
+  /* Editorial type scale */
+  --t-display: 31px; /* section verdict / headline */
+  --t-kpi: 42px; /* hero numerals */
+  --t-title: 17px; /* card + section titles */
+  --t-body: 13px;
+  --t-micro: 11.5px;
+  --t-eyebrow: 10px; /* uppercase kickers */
+  --track-eyebrow: 0.13em;
+  --track-display: -0.021em;
+
+  /* Spacing rhythm */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 68px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0c0f13;
+  --surface: #151a20;
+  --surface-raised: #1b212a;
+  --surface-sunk: #10151a;
+  --ink: #f1f3f5;
+  --ink-2: #b7bfc9;
+  --ink-3: #a3abb5;
+  --ink-4: #8f97a1;
+  --ink-faint: #666e78;
+  --grid: #262c34;
+  --baseline: #39414a;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --rule: rgba(255, 255, 255, 0.1);
+  --rule-2: rgba(255, 255, 255, 0.18);
+  --rule-strong: rgba(255, 255, 255, 0.46);
+  --brand: #e9eef5;
+  --brand-2: #a9c0da;
+  --brand-ink: #0c0f13;
+  --brand-wash: rgba(233, 238, 245, 0.07);
+  --accent: #3987e5;
+  --accent-wash: rgba(57, 135, 229, 0.13);
+  --state-faulted: #e05252;
+  --state-stopped: #d95926;
+  --state-suspended: #9085e9;
+  --delta-good: #0ca30c;
+  --delta-bad: #e05252;
+  --shadow-card: none;
+  --shadow-pop: 0 10px 34px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100vh;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 13.5px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Every figure in the product is a lining, tabular figure — columns of numbers
+   line up on the decimal without per-cell opt-in. */
+.tile-value,
+.tbl td.num,
+.tbl th.num,
+.kpi-value,
+.stat-figure,
+[data-numeric] {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+select,
+input {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  padding: 5px 9px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+select:hover,
+input:hover {
+  border-color: var(--rule-strong);
+}
+
+select:focus-visible,
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── App frame ────────────────────────────────────────────────────────── */
+
+.app {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 32px 72px;
+}
+
+/* The page opens on a heavy brand rule, aligned to the content measure —
+   the board-pack convention that says "this is a document, not a screen". */
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 0 15px;
+  border-top: 3px solid var(--brand);
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.masthead-left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+/* The slash is structural, not decorative — hold it back from the wordmark. */
+.wordmark span {
+  color: var(--ink-4);
+  font-weight: 500;
+}
+
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.masthead-title b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.masthead-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--state-successful);
+}
+
+.live-dot.paused {
+  background: var(--ink-3);
+}
+
+.theme-toggle {
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  padding: 5px 11px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+  background: var(--brand-wash);
+}
+
+/* ── Nav tabs ─────────────────────────────────────────────────────────── */
+
+.nav {
+  display: flex;
+  gap: 26px;
+  padding: 11px 0 0;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.nav button {
+  padding: 6px 0 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+}
+
+.nav button:hover {
+  color: var(--ink);
+}
+
+.nav button.active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+:root[data-theme='dark'] .nav button.active {
+  border-bottom-color: var(--accent);
+}
+
+/* ── Filter bar ───────────────────────────────────────────────────────── */
+
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-right: 2px;
+}
+
+.seg {
+  display: flex;
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.seg button {
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  border-right: 1px solid var(--rule);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.seg button:last-child {
+  border-right: none;
+}
+
+.seg button:hover {
+  background: var(--brand-wash);
+  color: var(--ink);
+}
+
+.seg button.active {
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.chip:hover {
+  background: var(--accent-wash);
+}
+
+.chip.on {
+  border-color: var(--border-strong);
+  color: var(--ink);
+  font-weight: 500;
+  background: var(--surface-raised);
+}
+
+.chip.off {
+  opacity: 0.45;
+}
+
+.chip .swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.range-inputs input {
+  width: 168px;
+}
+
+/* ── Cards & grids ────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  gap: 16px;
+  margin-top: var(--s5);
+}
+
+/* The KPI band. Not five cards — one ruled register, cells divided by
+   hairlines and closed top and bottom, the way a deck states its numbers. */
+.kpi-row {
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 0;
+  margin-top: var(--s5);
+  border-top: 1.5px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.kpi-row .card {
+  border: 0;
+  border-left: 1px solid var(--rule);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  padding: 18px 24px 17px;
+}
+
+.kpi-row > :first-child .card,
+.kpi-row > .card:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+/* The one KPI that links out shouldn't advertise itself as a link until
+   you're on it — underlining a whole tile reads as a bug, not an affordance. */
+.kpi-row .tile-link .card {
+  transition: background 0.15s;
+}
+
+.kpi-row .tile-link:hover .card {
+  background: var(--brand-wash);
+}
+
+.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+.main-side {
+  grid-template-columns: 2fr 1fr;
+}
+
+@media (max-width: 1000px) {
+  .two-col,
+  .main-side {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 18px 20px 20px;
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+/* A ruled header, not a floating label — the rule is what gives a card its
+   authority once the drop shadow is gone. */
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 9px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Titles are set, not shouted. Sentence-case serif reads as authored;
+   the old micro-caps read as a form field. */
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  text-transform: none;
+  color: var(--ink);
+}
+
+.card-sub {
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+
+.refetching {
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
+/* ── Stat tile ────────────────────────────────────────────────────────── */
+
+.tile-label {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  line-height: 1.35;
+  /* Two-word German labels must not shove the numerals out of alignment. */
+  min-height: 2.7em;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* The figure is the hero. Serif, light weight, large — the contrast against
+   the micro-caps label above it is what makes the register read as considered. */
+.tile-value {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.1vw, 42px);
+  font-weight: 400;
+  letter-spacing: var(--track-display);
+  line-height: 1.02;
+  margin-top: 2px;
+  color: var(--ink);
+}
+
+.tile-value small {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.tile-delta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 9px;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+
+.tile-delta .dir {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dir.good {
+  color: var(--delta-good);
+}
+
+.dir.bad {
+  color: var(--delta-bad);
+}
+
+.dir.flat {
+  color: var(--ink-3);
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+
+.tbl-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.tbl th {
+  text-align: left;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding: 0 12px 8px;
+  border-bottom: 1.5px solid var(--rule-strong);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.tbl th:hover {
+  color: var(--ink-2);
+}
+
+.tbl th.num,
+.tbl td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.tbl td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+/* Flush the outer columns to the card's measure — indented first and last
+   columns are the tell of a generic data grid. */
+.tbl th:first-child,
+.tbl td:first-child {
+  padding-left: 0;
+}
+
+.tbl th:last-child,
+.tbl td:last-child {
+  padding-right: 0;
+}
+
+.tbl tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tbl tbody tr {
+  transition: background 0.12s;
+}
+
+.tbl tbody tr:hover {
+  background: var(--brand-wash);
+}
+
+.tbl .primary {
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+
+.tbl .dim {
+  color: var(--ink-4);
+  font-size: 11px;
+}
+
+.sort-mark {
+  font-size: 9px;
+  margin-left: 3px;
+}
+
+/* ── Badges & bars ────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2.5px 8px;
+  border-radius: 2px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--rule-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Measured bars, not pills — a rounded cap on a 6px bar throws the length
+   reading off by its own radius at exactly the sizes we use. */
+.minibar {
+  height: 5px;
+  border-radius: 0;
+  background: var(--grid);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.minibar > div {
+  height: 100%;
+  border-radius: 0;
+}
+
+/* ── Chart tooltip ────────────────────────────────────────────────────── */
+
+.viz-tip {
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  padding: 9px 12px;
+  font-size: 12px;
+  box-shadow: var(--shadow-pop);
+}
+
+.viz-tip .tip-title {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding-bottom: 6px;
+  margin-bottom: 7px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.viz-tip .tip-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 1.5px 0;
+}
+
+.viz-tip .tip-key {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.viz-tip .tip-val {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.viz-tip .tip-name {
+  color: var(--ink-2);
+}
+
+/* ── Legend ───────────────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 18px;
+  font-size: var(--t-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--rule);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-item .key-rect {
+  width: 9px;
+  height: 9px;
+  border-radius: 0;
+}
+
+.legend-item .key-line {
+  width: 13px;
+  height: 2px;
+  border-radius: 0;
+}
+
+/* ── States: empty / error / setup ────────────────────────────────────── */
+
+.state-block {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.state-block b {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.setup-panel {
+  max-width: 640px;
+  margin: 60px auto;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--brand);
+  border-radius: 4px;
+  padding: 32px 36px;
+}
+
+.setup-panel h1 {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
+.setup-panel p {
+  color: var(--ink-2);
+  margin: 8px 0;
+}
+
+.setup-panel code {
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+}
+
+.setup-panel ol {
+  color: var(--ink-2);
+  padding-left: 20px;
+}
+
+.setup-panel li {
+  margin: 6px 0;
+}
+
+.notice {
+  margin-top: var(--s4);
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--state-warning);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--surface);
+}
+
+.error-banner {
+  margin-top: var(--s4);
+  padding: 11px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--state-faulted);
+  border-radius: 2px;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+/* ── Forms (manual errors, settings) ──────────────────────────────────── */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-top: 10px;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.form-grid .form-wide {
+  grid-column: 1 / -1;
+}
+
+textarea {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  padding: 6px 8px;
+  outline: none;
+  resize: vertical;
+}
+
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 12.5px;
+  border-radius: 3px;
+  padding: 7px 16px;
+}
+
+:root[data-theme='dark'] .btn-primary {
+  background: var(--accent);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.hint-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.hint-list li {
+  margin: 6px 0;
+}
+
+.keyword-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.keyword-chips .chip button {
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 12.5px;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-row input[type='number'] {
+  width: 90px;
+}
+
+/* ── Stakeholder view ─────────────────────────────────────────────────── */
+
+/* The verdict. A consulting deck leads with the conclusion, not a container —
+   so this is set type on the page, not a card. It is the largest thing here
+   on purpose: everything below is evidence for this one sentence. */
+.stake-headline {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-top: var(--s6);
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.stake-headline .health-dot {
+  width: 11px;
+  height: 11px;
+  margin-top: 13px;
+}
+
+.stake-headline-text {
+  font-family: var(--font-display);
+  font-size: var(--t-display);
+  font-weight: 400;
+  letter-spacing: var(--track-display);
+  line-height: 1.16;
+  color: var(--ink);
+  max-width: 34ch;
+  text-wrap: balance;
+}
+
+.stake-headline-sub {
+  margin-top: 11px;
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 0.005em;
+}
+
+.health-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Section rhythm ───────────────────────────────────────────────────────
+   Sections are opened by a heavy rule and a numbered kicker, then named in
+   serif. This is what carries the "document" reading: the reader always knows
+   which chapter they are in, and no box is needed to tell them. */
+
+.stake-section-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* The opening section is titled by its own verdict, so it takes the kicker
+   alone — a second heading above the conclusion would bury the lede. */
+.lede-eyebrow {
+  margin-top: var(--s6);
+  padding-top: 13px;
+  border-top: 1.5px solid var(--rule-strong);
+}
+
+.lede-eyebrow + .stake-headline {
+  margin-top: 0;
+}
+
+/* A section head already opens the space below it. */
+.stake-section-head + .grid,
+.stake-section-head + .card,
+.stake-section-head + .outcome-strip {
+  margin-top: 0;
+}
+
+.section-eyebrow {
+  display: block;
+  font-family: var(--font);
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+
+/* The numeral is the only place the brand navy appears in running text. */
+.section-eyebrow b {
+  color: var(--brand);
+  font-weight: 700;
+  margin-right: 7px;
+}
+
+:root[data-theme='dark'] .section-eyebrow b {
+  color: var(--brand-2);
+}
+
+.stake-area-title {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin: var(--s4) 0 var(--s2);
+}
+
+.stake-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.stake-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+.stake-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.stake-card:hover .stake-card-more {
+  opacity: 1;
+}
+
+.stake-card.unhealthy {
+  border-left: 3px solid var(--state-warning);
+}
+
+.stake-card-more {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.stake-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stake-card-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stake-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.stake-card-desc {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.stake-card-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.stake-card-figures b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.stake-card-issue {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-radius: 3px;
+  background: var(--accent-wash);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.stake-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.stake-issue-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.stake-issue-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.stake-issue-count .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.stake-footnote {
+  margin-top: 26px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* Section header with card controls */
+
+.stake-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: var(--s8) 0 var(--s4);
+  padding-top: 13px;
+  border-top: 1.5px solid var(--rule-strong);
+}
+
+.stake-section-head .stake-section-title {
+  margin: 0;
+}
+
+.stake-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+
+.tile-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.tile-link:hover .card {
+  border-color: var(--border-strong);
+}
+
+/* ── Status strip ─────────────────────────────────────────────────────── */
+
+.status-strip {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  margin-top: 11px;
+  height: 16px;
+}
+
+.status-strip.large {
+  height: 26px;
+  gap: 3px;
+}
+
+.strip-block {
+  flex: 1 1 0;
+  min-width: 2px;
+  border-radius: 0;
+}
+
+/* Anchored to the strip (not the block) so the readout always stays inside
+   the card — a block-anchored tooltip overflows the page on the right column.
+   display:none rather than opacity keeps hidden tooltips out of the layout. */
+.strip-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 170px;
+  padding: 8px 11px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  box-shadow: var(--shadow-pop);
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-align: left;
+  pointer-events: none;
+}
+
+.strip-tip b {
+  display: block;
+  color: var(--ink);
+}
+
+.strip-block:hover .strip-tip {
+  display: block;
+}
+
+/* ── Master automation table ──────────────────────────────────────────── */
+
+.automation-table .tbl td {
+  vertical-align: middle;
+}
+
+.tbl tr.row-clickable {
+  cursor: pointer;
+}
+
+.tbl tr.row-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.tbl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.tbl-metric {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.tbl-metric .minibar {
+  min-width: 46px;
+  width: 46px;
+}
+
+.tbl-strip {
+  display: block;
+  width: 108px;
+}
+
+.tbl-strip .status-strip {
+  margin-top: 0;
+  height: 13px;
+}
+
+/* ── Outcome strip (slim distribution line) ───────────────────────────── */
+
+/* Sits directly under the KPI register in section 01, so it is ruled like a
+   continuation of that band rather than boxed as a separate card. */
+.outcome-strip {
+  margin-top: var(--s5);
+  padding: 0 0 var(--s2);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.outcome-strip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 8px;
+  margin-bottom: 11px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.outcome-bar.slim {
+  height: 16px;
+  border-radius: 0;
+}
+
+.outcome-strip-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.outcome-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.outcome-strip-item .key-rect {
+  width: 9px;
+  height: 9px;
+  border-radius: 0;
+}
+
+.outcome-strip-item b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Outcome share bar ────────────────────────────────────────────────── */
+
+.outcome-total {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin: 6px 0 8px;
+}
+
+.outcome-total b {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: var(--track-display);
+  color: var(--ink);
+}
+
+.outcome-bar {
+  display: flex;
+  gap: 1px;
+  height: 30px;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.outcome-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3px;
+  transition: filter 0.12s;
+}
+
+.outcome-seg:hover {
+  filter: brightness(1.12);
+}
+
+.outcome-seg-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #ffffff;
+}
+
+.outcome-legend {
+  margin-top: 12px;
+}
+
+.outcome-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.outcome-legend-row:last-child {
+  border-bottom: none;
+}
+
+.outcome-legend-row .grow {
+  flex: 1;
+}
+
+.outcome-legend-row b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.outcome-legend-row .dim {
+  width: 56px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Time saved bars ──────────────────────────────────────────────────── */
+
+.tsb-summary {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 6px 0 16px;
+}
+
+.tsb-summary b {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.tsb-summary-saved {
+  margin-top: 4px;
+  color: var(--delta-good);
+}
+
+.tsb-summary-saved b {
+  color: var(--delta-good);
+}
+
+.tsb-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.tsb-name {
+  grid-column: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.tsb-saved {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--delta-good);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tsb-bars {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.tsb-bar-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.tsb-bar-label {
+  width: 86px;
+  flex-shrink: 0;
+}
+
+.tsb-track {
+  flex: 1;
+  height: 9px;
+  background: var(--grid);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.tsb-fill {
+  display: block;
+  height: 100%;
+  border-radius: 0;
+}
+
+.tsb-value {
+  width: 72px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+/* ── Activity heatmap ─────────────────────────────────────────────────── */
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 28px repeat(24, 1fr);
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.heatmap-hour,
+.heatmap-day {
+  font-size: 9.5px;
+  color: var(--ink-3);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap-day {
+  text-align: right;
+  padding-right: 5px;
+  line-height: 16px;
+}
+
+.heatmap-cell {
+  height: 16px;
+  border-radius: 0;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.heatmap-swatch {
+  width: 20px;
+  height: 9px;
+  border-radius: 0;
+}
+
+.heatmap-legend-max {
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+/* ── Responsibility ───────────────────────────────────────────────────── */
+
+.resp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1.5px 8px 1.5px 6px;
+  border: 1px solid var(--rule-2);
+  border-radius: 2px;
+  background: var(--surface-raised);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.resp-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.resp-bar {
+  display: flex;
+  gap: 1px;
+  height: 26px;
+  margin: 8px 0 16px;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.resp-seg {
+  min-width: 3px;
+}
+
+.resp-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+}
+
+.resp-row:last-of-type {
+  border-bottom: none;
+}
+
+.resp-row .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.resp-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.resp-row b {
+  color: var(--ink);
+}
+
+.resp-count {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.resp-count b {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+/* Notes are set off by a brand rule on the leading edge rather than a tinted
+   box — a filled panel here competes with the data for attention. */
+.resp-note {
+  margin-top: 14px;
+  padding: 2px 0 2px 13px;
+  border-left: 2px solid var(--rule-2);
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+.stake-card-issue-who {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* ── Colour legend ────────────────────────────────────────────────────── */
+
+.legend-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px 28px;
+  margin-top: 10px;
+}
+
+.legend-group-title {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding-bottom: 7px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.legend-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 4px 0;
+  font-size: 12.5px;
+}
+
+.legend-entry .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.legend-entry b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.legend-entry .dim {
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.legend-note {
+  margin-top: 18px;
+  padding: 2px 0 2px 13px;
+  border-left: 2px solid var(--rule-2);
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+
+.legend-note b {
+  color: var(--ink);
+}
+
+/* ── Detail panel ─────────────────────────────────────────────────────── */
+
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 14, 16, 0.32);
+  z-index: 60;
+  animation: fade-in 0.15s ease-out;
+}
+
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(560px, 100vw);
+  z-index: 61;
+  background: var(--page);
+  border-left: 1px solid var(--rule-2);
+  box-shadow: -10px 0 40px rgba(15, 36, 56, 0.18);
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  animation: slide-in 0.18s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-backdrop,
+  .detail-panel {
+    animation: none;
+  }
+  .stake-card {
+    transition: none;
+  }
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel-kicker {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.2;
+  margin: 6px 0 0;
+}
+
+.panel-desc {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.panel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.panel-close {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ink-3);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.panel-close:hover {
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 26px 32px;
+}
+
+.panel-body section {
+  margin-bottom: 26px;
+}
+
+.panel-section-title {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding-bottom: 7px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.panel-figures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+}
+
+.panel-figures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.panel-figures b {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.panel-manual {
+  padding: 10px 13px;
+  margin-bottom: 8px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--state-warning);
+  border-radius: 2px;
+  font-size: 12.5px;
+}
+
+/* ── Presentation mode ────────────────────────────────────────────────── */
+
+:root[data-presentation='true'] body {
+  font-size: 16px;
+}
+
+:root[data-presentation='true'] .app {
+  max-width: 1800px;
+  padding: 0 44px 44px;
+}
+
+:root[data-presentation='true'] .theme-toggle,
+:root[data-presentation='true'] .range-inputs,
+:root[data-presentation='true'] .stake-controls,
+:root[data-presentation='true'] .stake-footnote,
+:root[data-presentation='true'] .footer {
+  display: none;
+}
+
+/* Presentation mode scales the type system itself rather than patching
+   individual rules, so the editorial proportions survive the jump to a
+   meeting-room screen. */
+:root[data-presentation='true'] {
+  --t-display: 44px;
+  --t-title: 21px;
+  --t-micro: 14px;
+  --t-eyebrow: 12px;
+}
+
+:root[data-presentation='true'] .stake-headline-sub {
+  font-size: 15px;
+}
+
+:root[data-presentation='true'] .tile-value {
+  font-size: clamp(42px, 3.4vw, 60px);
+}
+
+:root[data-presentation='true'] .stake-section-title {
+  font-size: 30px;
+}
+
+:root[data-presentation='true'] .tbl {
+  font-size: 15px;
+}
+
+:root[data-presentation='true'] .stake-card-name {
+  font-size: 17px;
+}
+
+:root[data-presentation='true'] .stake-cards {
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+}
+
+/* ── Print / PDF (board pack) ─────────────────────────────────────────── */
+
+.print-period {
+  display: none;
+}
+
+@media print {
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: light;
+    --page: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --ink: #000000;
+    --ink-2: #333333;
+    --ink-3: #4d4d4d;
+    --ink-4: #595959;
+    --ink-faint: #8a8a8a;
+    --grid: #dddddd;
+    --border: #cccccc;
+    --border-strong: #999999;
+    /* Solid greys, not alpha — a 9%-opacity hairline drops out on most
+       office printers, taking the whole ruled structure with it. */
+    --rule: #d4d4d4;
+    --rule-2: #a8a8a8;
+    --rule-strong: #4d4d4d;
+    --brand-wash: transparent;
+    --shadow-card: none;
+    --shadow-pop: none;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .app {
+    max-width: none;
+    padding: 0;
+  }
+
+  .masthead-right,
+  .nav,
+  .filterbar,
+  .stake-controls,
+  .stake-card-more,
+  .stake-footnote,
+  .panel-backdrop,
+  .detail-panel,
+  .strip-tip,
+  button {
+    display: none !important;
+  }
+
+  .print-period {
+    display: block;
+    margin: 10px 0 4px;
+    font-size: 11pt;
+    color: #333333;
+  }
+
+  .card,
+  .stake-card,
+  .stake-headline,
+  .kpi-row,
+  .outcome-strip,
+  section {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  /* A section title stranded at the foot of a page is the classic board-pack
+     printing failure — keep every heading with the material it introduces. */
+  .stake-section-head,
+  .lede-eyebrow,
+  .card-head {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  .grid.two-col,
+  .grid.main-side {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stake-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}
+
+.linklike {
+  color: var(--accent);
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+/* Colophon. Closed by the same heavy rule that opened the page. */
+.footer {
+  margin-top: var(--s8);
+  padding-top: 14px;
+  border-top: 1.5px solid var(--rule-strong);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  justify-content: space-between;
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
