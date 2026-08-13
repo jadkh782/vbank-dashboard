@@ -32,13 +32,28 @@ export const DEMO_FOLDERS: OrchFolder[] = [
   { Id: 2, DisplayName: 'Operations', FullyQualifiedName: 'Vbank/Operations' },
 ]
 
+/**
+ * Faults follow a fixed cadence rather than a per-run dice roll: every
+ * `faultEvery`-th run of a process is the one that fails. A random rate only
+ * holds on average, so on a short window — where a process runs a handful of
+ * times — one unlucky roll swings it 20 points and flips its status. A cadence
+ * lands the same success rate at every window length.
+ *
+ * The cadences are set so the demo tells a healthy story: eight of the nine
+ * automations (five processes + four queues) sit well above the 90 % "läuft
+ * normal" threshold, and exactly one — Card Disputes — sits in "benötigt
+ * Aufmerksamkeit" so the attention states stay demonstrable.
+ */
 const PROCESSES = [
-  { name: 'Vbank_InvoiceProcessing', folder: 1, weight: 0.3, failRate: 0.06, durMin: 4 },
-  { name: 'Vbank_PaymentReconciliation', folder: 1, weight: 0.22, failRate: 0.11, durMin: 9 },
-  { name: 'Vbank_KYC_Refresh', folder: 2, weight: 0.18, failRate: 0.04, durMin: 6 },
-  { name: 'Vbank_CardDisputes', folder: 2, weight: 0.16, failRate: 0.15, durMin: 12 },
-  { name: 'Vbank_DailyReporting', folder: 1, weight: 0.14, failRate: 0.02, durMin: 3 },
+  { name: 'Vbank_InvoiceProcessing', folder: 1, weight: 0.3, faultEvery: 64, durMin: 4 },
+  { name: 'Vbank_PaymentReconciliation', folder: 1, weight: 0.22, faultEvery: 48, durMin: 9 },
+  { name: 'Vbank_KYC_Refresh', folder: 2, weight: 0.18, faultEvery: 56, durMin: 6 },
+  { name: 'Vbank_CardDisputes', folder: 2, weight: 0.16, faultEvery: 8, durMin: 12 },
+  { name: 'Vbank_DailyReporting', folder: 1, weight: 0.14, faultEvery: 72, durMin: 3 },
 ]
+
+/** Every n-th run of a process is stopped rather than completed. */
+const STOPPED_EVERY = 160
 
 const FAULTS = [
   'Selector not found: <webctrl tag=\'INPUT\' id=\'amount\' /> at PaymentPortal.SubmitPage',
@@ -99,13 +114,17 @@ export function generateDemoData(
   const queueItems: OrchQueueItem[] = []
   const totalHours = Math.ceil((to.getTime() - start.getTime()) / 3600_000)
   let id = 1
+  /** Runs so far per process — drives the deterministic fault cadence. */
+  const runCount = new Map<string, number>()
 
   for (let h = 0; h < totalHours; h++) {
     const hourStart = new Date(start.getTime() + h * 3600_000)
     const factor = activityFactor(hourStart)
     for (const p of PROCESSES) {
       if (!folderIds.has(p.folder)) continue
-      const expected = 3.2 * p.weight * factor
+      // Enough runs per hour that even the "Heute" window carries a sample
+      // worth reading a success rate from.
+      const expected = 8 * p.weight * factor
       const runs = Math.floor(expected) + (rnd() < expected % 1 ? 1 : 0)
       for (let r = 0; r < runs; r++) {
         const created = new Date(hourStart.getTime() + rnd() * 3500_000)
@@ -114,12 +133,13 @@ export function generateDemoData(
         const startT = new Date(created.getTime() + 15_000 + rnd() * 60_000)
         const end = new Date(startT.getTime() + durMs)
         const stillRunning = end.getTime() > to.getTime() - 120_000
-        const roll = rnd()
+        const n = (runCount.get(p.name) ?? 0) + 1
+        runCount.set(p.name, n)
         const state: JobState = stillRunning
           ? 'Running'
-          : roll < p.failRate
+          : n % p.faultEvery === 0
             ? 'Faulted'
-            : roll < p.failRate + 0.015
+            : n % STOPPED_EVERY === 0
               ? 'Stopped'
               : 'Successful'
         const folder = DEMO_FOLDERS.find((f) => f.Id === p.folder)!
@@ -155,8 +175,9 @@ export function generateDemoData(
         if (created > to) continue
         const roll = rnd()
         const isNew = created.getTime() > to.getTime() - 3600_000 && roll < 0.35
-        const status = isNew ? 'New' : roll < 0.08 ? 'Failed' : roll < 0.12 ? 'Retried' : 'Successful'
-        const isBiz = rnd() < 0.45
+        const status = isNew ? 'New' : roll < 0.05 ? 'Failed' : roll < 0.08 ? 'Retried' : 'Successful'
+        // Most exceptions are correctly recognised routing-outs, not failures.
+        const isBiz = rnd() < 0.55
         const startP = new Date(created.getTime() + 30_000 + rnd() * 600_000)
         const endP = new Date(startP.getTime() + 40_000 + rnd() * 240_000)
         queueItems.push({

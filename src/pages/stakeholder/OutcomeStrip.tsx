@@ -11,15 +11,34 @@ export interface OutcomeSlice {
  * under the hero figures and doubles as the colour key for the trend chart
  * below it, so the same information costs one line instead of a panel.
  */
-export function OutcomeStrip({ slices, title }: { slices: OutcomeSlice[]; title: string }) {
+export function OutcomeStrip({
+  slices,
+  title,
+  correct,
+}: {
+  slices: OutcomeSlice[]
+  title: string
+  /** Slice labels that count as a correct outcome, summarised in the header. */
+  correct?: string[]
+}) {
   const total = slices.reduce((a, s) => a + s.value, 0)
   if (total === 0) return null
+
+  const correctCount = correct
+    ? slices.filter((s) => correct.includes(s.label)).reduce((a, s) => a + s.value, 0)
+    : null
 
   return (
     <div className="outcome-strip">
       <div className="outcome-strip-head">
         <span className="card-title">{title}</span>
-        <span className="card-sub">{deInt(total)} Vorgänge</span>
+        <span className="card-sub">
+          {correctCount === null
+            ? `${deInt(total)} Vorgänge`
+            : `${deInt(correctCount)} von ${deInt(total)} Vorgängen korrekt verarbeitet · ${dePct(
+                (correctCount / total) * 100,
+              )}`}
+        </span>
       </div>
       <div className="outcome-bar slim">
         {slices

@@ -50,16 +50,16 @@ export function useOutcomeColors() {
   const { mode } = useThemeMode()
   return mode === 'dark'
     ? {
-        erfolgreich: '#0ca30c',
-        aussteuerung: '#3987e5',
-        nichtErfolgreich: '#c98500',
-        prozessfehler: '#9085e9',
+        erfolgreich: '#22c55e',
+        aussteuerung: '#60a5fa',
+        nichtErfolgreich: '#f59e0b',
+        prozessfehler: '#a78bfa',
       }
     : {
-        erfolgreich: '#0ca30c',
-        aussteuerung: '#2a78d6',
-        nichtErfolgreich: '#eda100',
-        prozessfehler: '#4a3aa7',
+        erfolgreich: '#16a34a',
+        aussteuerung: '#3b82f6',
+        nichtErfolgreich: '#d97706',
+        prozessfehler: '#7c3aed',
       }
 }
 
@@ -141,19 +141,21 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
     healthStrip(card, jobs, page.queueItems, idsByName, from, to, settings.healthThresholds)
 
   const criticalCount = affected.filter((c) => c.health === 'critical').length
-  const headlineCount = health === 'critical' ? criticalCount : affected.length
+  const okCount = allCards.length - affected.length
+  // The headline leads with the result, and the result is normally the good
+  // one: only a genuine Störung is stated as a problem. Anything milder reads
+  // as "n of m ran successfully", with the open items named in the sub-line
+  // below so nothing is hidden by the positive framing.
   const headline =
     health === 'ok'
       ? 'Alle Automatisierungen laufen normal.'
-      : `${deInt(headlineCount)} von ${deInt(allCards.length)} Prozessen ${
-          health === 'critical'
-            ? headlineCount === 1
-              ? 'ist gestört.'
-              : 'sind gestört.'
-            : headlineCount === 1
-              ? 'benötigt Aufmerksamkeit.'
-              : 'benötigen Aufmerksamkeit.'
-        }`
+      : health === 'critical'
+        ? `${deInt(criticalCount)} von ${deInt(allCards.length)} Prozessen ${
+            criticalCount === 1 ? 'ist gestört.' : 'sind gestört.'
+          }`
+        : `${deInt(okCount)} von ${deInt(allCards.length)} Prozessen ${
+            okCount === 1 ? 'ist erfolgreich gelaufen.' : 'sind erfolgreich gelaufen.'
+          }`
 
   const visibleCards =
     cardFilter === 'auffaellig' ? allCards.filter((c) => c.health !== 'ok') : allCards
@@ -174,15 +176,17 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
   ]
 
   const volume = queueVolumeOverTime(page.queueItems, from, to)
+  // A correctly recognised routing-out is a correct outcome, so the trend
+  // carries it inside the green band rather than as a colour of its own —
+  // the bar then reads directly as "how much went right that day".
   const verlaufRows = volume.rows.map((r) => ({
     label: r.label,
-    Erfolgreich: r['Successful'] as number,
-    'Korrekt ausgesteuert': (r['Business exception'] as number) ?? 0,
+    'Korrekt verarbeitet':
+      ((r['Successful'] as number) ?? 0) + ((r['Business exception'] as number) ?? 0),
     'Nicht erfolgreich': (r['App exception'] as number) ?? 0,
   }))
   const verlaufSeries = [
-    { key: 'Erfolgreich', color: OUTCOME_COLORS.erfolgreich },
-    { key: 'Korrekt ausgesteuert', color: OUTCOME_COLORS.aussteuerung },
+    { key: 'Korrekt verarbeitet', color: OUTCOME_COLORS.erfolgreich },
     { key: 'Nicht erfolgreich', color: OUTCOME_COLORS.nichtErfolgreich },
   ]
 
@@ -201,6 +205,10 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
           <div className="stake-headline-sub">
             Zeitraum {deDateTime(from)} – {deDateTime(to)} · {deInt(processed)} Vorgänge bearbeitet ·{' '}
             {deInt(allCards.length)} Automatisierungen im Einsatz
+            {affected.length > 0 &&
+              ` · ${deInt(affected.length)} ${
+                affected.length === 1 ? 'benötigt' : 'benötigen'
+              } Aufmerksamkeit`}
           </div>
         </div>
       </section>
@@ -244,7 +252,13 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
       </div>
 
       {/* 3 — distribution as one slim line, doubling as the chart's key */}
-      <OutcomeStrip slices={outcomeSlices} title="Ergebnisverteilung" />
+      {/* Erfolgreich and Aussteuerung are both correct outcomes — the header
+          states their sum so the split below never reads as 88 % success. */}
+      <OutcomeStrip
+        slices={outcomeSlices}
+        title="Ergebnisverteilung"
+        correct={['Erfolgreich', 'Korrekt erkannte Aussteuerung']}
+      />
 
       {/* 4 — the single hero chart */}
       <div className="grid">
@@ -327,7 +341,7 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
           <span className="section-eyebrow">
             <b>04</b> — Wirkung
           </span>
-          <h2 className="stake-section-title">Zeitersparnis und Arbeitsmuster</h2>
+          <h2 className="stake-section-title">Digitale Mitarbeiter Zeit</h2>
         </div>
       </div>
       <div className="grid two-col">
