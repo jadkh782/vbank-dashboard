@@ -82,7 +82,9 @@ Without these values the dashboard still works — entries are then stored per-b
 3. Anyone with the link can see operational data and add manual errors — put Vercel
    access protection (or similar) in front for anything beyond internal use.
 
-**Self-hosted Orchestrator behind a VPN:** Vercel (or any public host) cannot reach it, so
+**Self-hosted Orchestrator behind a VPN:** Vercel (or any public host) cannot reach it. Set
+the Vercel environment variable `VITE_DEMO_DEFAULT=true` so the public link shows the demo
+data instead of the setup screen. For live data,
 the dashboard has to run where the VPN does — either each user runs `npm run dev` on a
 VPN-connected machine, or the built app (`npm run build` → `dist/`) is served from a web
 server inside the V-Bank network with the same two reverse-proxy rules as the dev server:

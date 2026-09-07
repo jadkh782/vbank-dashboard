@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_UIPATH_ORCHESTRATOR_URL?: string
   readonly VITE_UIPATH_IDENTITY_URL?: string
   readonly VITE_UIPATH_TLS_INSECURE?: string
+  readonly VITE_DEMO_DEFAULT?: string
   readonly VITE_SUPABASE_URL?: string
   readonly VITE_SUPABASE_ANON_KEY?: string
 }

@@ -64,10 +64,16 @@ export function healthOf(
 
 // ── Naming ─────────────────────────────────────────────────────────────────
 
-/** "Vbank_InvoiceProcessing" -> "Invoice Processing" */
+/**
+ * "A-20401-008-ÜberweisungExtern" -> "Überweisung Extern",
+ * "Vbank_InvoiceProcessing" -> "Invoice Processing".
+ * Strips the V-Bank process code, a vendor prefix and a "-Queue" suffix.
+ */
 export function autoCleanName(technical: string): string {
   const cleaned = technical
+    .replace(/^[A-Z]-\d{5}-\d{3}-/, '')
     .replace(/^vbank[_\-\s]*/i, '')
+    .replace(/[_-]?queue$/i, ' Queue')
     .replace(/[_-]+/g, ' ')
     .replace(/([a-zäöü])([A-ZÄÖÜ])/g, '$1 $2')
     .replace(/([A-ZÄÖÜ]+)([A-ZÄÖÜ][a-zäöü])/g, '$1 $2')
