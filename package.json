@@ -2,12 +2,13 @@
   "name": "vbank-dashboard",
   "private": true,
   "version": "1.0.0",
-  "description": "Exelentic – Vbank · Intelligent Analysis Dashboard for UiPath Orchestrator",
+  "description": "Exelentic \u2013 Vbank \u00b7 Intelligent Analysis Dashboard for UiPath Orchestrator",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check": "node scripts/check-orchestrator.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.0.0",

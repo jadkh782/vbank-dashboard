@@ -1,4 +1,4 @@
-import { getAccessToken } from './auth'
+import { authHeaders } from './auth'
 import type { ODataResponse } from './types'
 
 export class OrchestratorError extends Error {
@@ -13,8 +13,7 @@ const PAGE_SIZE = 1000
 const MAX_PAGES_PER_QUERY = 10 // safety cap: 10,000 records per query per folder
 
 async function orchFetch<T>(path: string, folderId?: number): Promise<ODataResponse<T>> {
-  const token = await getAccessToken()
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
+  const headers = await authHeaders()
   if (folderId !== undefined) headers['X-UIPATH-OrganizationUnitId'] = String(folderId)
 
   const res = await fetch(`/orch/${path}`, { headers })
@@ -49,8 +48,7 @@ export async function fetchOne<T>(path: string, folderId?: number): Promise<ODat
 
 /** For endpoints that return a single object rather than an OData collection. */
 export async function fetchRaw<T>(path: string, folderId?: number): Promise<T> {
-  const token = await getAccessToken()
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
+  const headers = await authHeaders()
   if (folderId !== undefined) headers['X-UIPATH-OrganizationUnitId'] = String(folderId)
   const res = await fetch(`/orch/${path}`, { headers })
   if (!res.ok) {

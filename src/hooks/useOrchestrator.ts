@@ -40,6 +40,10 @@ export function useTenantData() {
     refetchInterval: refreshMs,
     placeholderData: keepPreviousData,
     retry: 1,
+    // A refresh is ~70 Orchestrator requests; don't repeat it just because the
+    // window regained focus — the interval above keeps the data current.
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
   })
 
   return { ...query, folders }

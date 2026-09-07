@@ -35,8 +35,11 @@ async function fetchQueueDefsForFolder(folder: OrchFolder) {
   return res.items.map((q) => ({ ...q, FolderId: folder.Id, FolderName: folder.DisplayName }))
 }
 
+// ProcessingException is a complex (inline) property, not a navigation
+// property: it is selected directly. Self-hosted Orchestrator (e.g. 22.10)
+// rejects `$expand=ProcessingException` with 400 "invalid OData query options".
 const QI_SELECT =
-  '$select=Id,QueueDefinitionId,Status,ProcessingExceptionType,CreationTime,StartProcessing,EndProcessing,Reference&$expand=ProcessingException($select=Reason,Type)'
+  '$select=Id,QueueDefinitionId,Status,ProcessingExceptionType,CreationTime,StartProcessing,EndProcessing,Reference,ProcessingException'
 
 async function fetchQueueItemsForFolder(folder: OrchFolder, from: Date, to: Date) {
   const filter = `$filter=CreationTime ge ${odataDate(from)} and CreationTime le ${odataDate(to)}`
@@ -78,6 +81,27 @@ async function fetchLicense(): Promise<LicenseInfo | null> {
 }
 
 /**
+ * Browsers open at most ~6 connections per origin and a self-hosted
+ * Orchestrator slows down sharply when dozens of folder queries arrive at
+ * once (29 folders × 3 queries took ~1 min; throttled it takes ~4 s). So
+ * per-folder queries run through a small pool instead of one big Promise.all.
+ */
+const FOLDER_CONCURRENCY = 5
+
+async function pooled<A, R>(items: A[], fn: (item: A) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++
+      out[i] = await fn(items[i])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(FOLDER_CONCURRENCY, items.length) }, worker))
+  return out
+}
+
+/**
  * Fetch everything the dashboard needs for a time window across the selected
  * folders. `from` is extended backwards by the window length so KPI deltas can
  * compare against the previous equivalent period without a second round-trip.
@@ -92,13 +116,16 @@ export async function fetchTenantData(
   const windowMs = to.getTime() - from.getTime()
   const extendedFrom = new Date(from.getTime() - windowMs)
 
-  const [jobResults, queueDefs, queueItemResults, alerts, license] = await Promise.all([
-    Promise.all(scoped.map((f) => fetchJobsForFolder(f, extendedFrom, to))),
-    Promise.all(scoped.map((f) => fetchQueueDefsForFolder(f))),
-    Promise.all(scoped.map((f) => fetchQueueItemsForFolder(f, extendedFrom, to))),
+  // Queue definitions are cheap; queue items are the expensive query, so it is
+  // only issued for folders that actually contain queues.
+  const [jobResults, queueDefs, alerts, license] = await Promise.all([
+    pooled(scoped, (f) => fetchJobsForFolder(f, extendedFrom, to)),
+    pooled(scoped, (f) => fetchQueueDefsForFolder(f)),
     fetchAlerts(extendedFrom),
     fetchLicense(),
   ])
+  const withQueues = scoped.filter((_, i) => queueDefs[i].length > 0)
+  const queueItemResults = await pooled(withQueues, (f) => fetchQueueItemsForFolder(f, extendedFrom, to))
 
   return {
     folders,

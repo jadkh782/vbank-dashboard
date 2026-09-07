@@ -1,6 +1,6 @@
 # Exelentic – Vbank · Intelligent Analysis Dashboard
 
-A live analytics dashboard over **UiPath Automation Cloud Orchestrator**: job runs,
+A live analytics dashboard over **UiPath Orchestrator** (Automation Cloud or self-hosted): job runs,
 processes, queue transactions, and a dedicated error-frequency analysis — with global
 time-range (presets or any from → to window) and job-status filters, folder scoping,
 and configurable auto-refresh.
@@ -25,9 +25,33 @@ and configurable auto-refresh.
      `OR.Jobs.Read`, `OR.Queues.Read`, `OR.Folders.Read`, `OR.Monitoring.Read`, `OR.Execution.Read`
 
    `.env` is gitignored; credentials never leave this machine. The dev server proxies all
-   API calls to `cloud.uipath.com` (browsers cannot call the UiPath API directly).
+   API calls to Orchestrator (browsers cannot call the UiPath API directly).
 
-3. Start:
+   **Self-hosted Orchestrator (on-premises / Automation Suite, e.g. only reachable through
+   the Barracuda VPN):** leave `VITE_UIPATH_ORG` empty and set instead
+
+   - `VITE_UIPATH_ORCHESTRATOR_URL` — standalone: `https://<host>`; Automation Suite:
+     `https://<host>/{org}/{tenant}/orchestrator_`
+   - `VITE_UIPATH_IDENTITY_URL` — standalone: `https://<host>/identity`; Automation Suite:
+     `https://<host>/identity_`
+   - `VITE_UIPATH_TENANT` — the tenant name (sent as `X-UIPATH-TenantName` on standalone)
+   - `VITE_UIPATH_TLS_INSECURE=true` only if the server uses an internal CA certificate
+
+   The External Application is created in the Orchestrator's identity management portal
+   (`https://<host>/identity/management` → External Applications, confidential app, with
+   the application scopes listed above). Because the proxy runs on your machine, connect
+   the VPN client first — the browser itself never talks to Orchestrator.
+
+   Put the client ID and secret in **double quotes** in `.env` — UiPath secrets often
+   contain `#`, which otherwise starts a comment and silently empties the value.
+
+3. Test the connection (token → folders → jobs, with a hint for every failure):
+
+   ```
+   npm run check
+   ```
+
+4. Start:
 
    ```
    npm run dev
@@ -48,13 +72,29 @@ PT hours, license capacity) are shared across the whole team via a free Supabase
 Without these values the dashboard still works — entries are then stored per-browser
 (localStorage) and a notice says so.
 
-## Deploying (Vercel)
+## Deploying
+
+**Automation Cloud (Vercel):**
 
 1. In [vercel.json](vercel.json), replace `YOUR-ORG` / `YOUR-TENANT` with the same values
    as in `.env` (rewrites replace the local dev proxy for the UiPath API).
 2. Add all `VITE_*` variables as Vercel environment variables.
 3. Anyone with the link can see operational data and add manual errors — put Vercel
    access protection (or similar) in front for anything beyond internal use.
+
+**Self-hosted Orchestrator behind a VPN:** Vercel (or any public host) cannot reach it, so
+the dashboard has to run where the VPN does — either each user runs `npm run dev` on a
+VPN-connected machine, or the built app (`npm run build` → `dist/`) is served from a web
+server inside the V-Bank network with the same two reverse-proxy rules as the dev server:
+`/orch/*` → `VITE_UIPATH_ORCHESTRATOR_URL/*` and `/identity/*` → `VITE_UIPATH_IDENTITY_URL/*`.
+The reverse proxy must keep upstream connections alive (nginx: `proxy_http_version 1.1;`
+and `proxy_set_header Connection "";`) — a fresh TLS connection to this Orchestrator costs
+about 2 s, and a refresh issues ~70 requests.
+
+Verified against V-Bank's standalone Orchestrator **22.10**: it rejects
+`$expand=ProcessingException` (the exception is selected inline instead) and the license
+endpoint returns 403 for an External Application, so the utilization view uses the
+license capacity configured under Settings.
 
 ## Pages
 

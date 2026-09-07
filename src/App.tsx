@@ -25,7 +25,7 @@ function SetupPanel() {
     <div className="setup-panel">
       <h1>Connect to UiPath Orchestrator</h1>
       <p>
-        This dashboard reads live data from your Automation Cloud tenant. It needs credentials in a local{' '}
+        This dashboard reads live data from your Orchestrator tenant. It needs credentials in a local{' '}
         <code>.env</code> file before it can start.
       </p>
       <ol>
@@ -33,8 +33,10 @@ function SetupPanel() {
           In the project folder, copy <code>.env.example</code> to <code>.env</code>.
         </li>
         <li>
-          Set <code>VITE_UIPATH_ORG</code> and <code>VITE_UIPATH_TENANT</code> (the two names in your
-          Orchestrator URL: <code>cloud.uipath.com/&#123;org&#125;/&#123;tenant&#125;</code>).
+          Automation Cloud: set <code>VITE_UIPATH_ORG</code> and <code>VITE_UIPATH_TENANT</code> (the two names
+          in your Orchestrator URL: <code>cloud.uipath.com/&#123;org&#125;/&#123;tenant&#125;</code>).
+          Self-hosted Orchestrator (e.g. behind a VPN): set <code>VITE_UIPATH_ORCHESTRATOR_URL</code>,{' '}
+          <code>VITE_UIPATH_IDENTITY_URL</code> and <code>VITE_UIPATH_TENANT</code> instead.
         </li>
         <li>
           Add either a Personal Access Token (<code>VITE_UIPATH_PAT</code>) or an External Application's{' '}
