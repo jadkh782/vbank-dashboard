@@ -89,6 +89,14 @@ the dashboard has to run where the VPN does — either each user runs `npm run d
 VPN-connected machine, or the built app (`npm run build` → `dist/`) is served from a web
 server inside the V-Bank network with the same two reverse-proxy rules as the dev server:
 `/orch/*` → `VITE_UIPATH_ORCHESTRATOR_URL/*` and `/identity/*` → `VITE_UIPATH_IDENTITY_URL/*`.
+**Quickest live hosting: a spare Windows laptop on the VPN.** `npm run build` then
+`npm run serve` serves the production build on port 4173 with the same proxy (keep-alive
+included) and accepts any hostname, so a tunnel can sit in front of it:
+`cloudflared tunnel --url http://localhost:4173` gives a public URL immediately. Put
+Cloudflare Access (or a named tunnel with a login policy) in front before sharing the link,
+keep the laptop from sleeping, and start the VPN client, `npm run serve` and `cloudflared`
+via Task Scheduler at logon.
+
 The reverse proxy must keep upstream connections alive (nginx: `proxy_http_version 1.1;`
 and `proxy_set_header Connection "";`) — a fresh TLS connection to this Orchestrator costs
 about 2 s, and a refresh issues ~70 requests.

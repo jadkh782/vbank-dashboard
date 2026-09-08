@@ -37,26 +37,29 @@ export default defineConfig(({ mode }) => {
   // folder queries per refresh that made the first load take over a minute.
   const agent = new HttpsAgent({ keepAlive: true, maxSockets: 8, rejectUnauthorized: !insecureTls })
 
+  const proxy = {
+    '/orch': {
+      target: orch.origin,
+      changeOrigin: true,
+      secure: !insecureTls,
+      agent,
+      rewrite: (path: string) => path.replace(/^\/orch/, orch.path),
+    },
+    '/identity': {
+      target: identity.origin,
+      changeOrigin: true,
+      secure: !insecureTls,
+      agent,
+      rewrite: (path: string) => path.replace(/^\/identity/, identity.path),
+    },
+  }
+
   return {
     plugins: [react()],
-    server: {
-      port: 5173,
-      proxy: {
-        '/orch': {
-          target: orch.origin,
-          changeOrigin: true,
-          secure: !insecureTls,
-          agent,
-          rewrite: (path) => path.replace(/^\/orch/, orch.path),
-        },
-        '/identity': {
-          target: identity.origin,
-          changeOrigin: true,
-          secure: !insecureTls,
-          agent,
-          rewrite: (path) => path.replace(/^\/identity/, identity.path),
-        },
-      },
-    },
+    server: { port: 5173, proxy },
+    // `npm run serve` — production build with the same proxy, for hosting on a
+    // VPN-connected machine. allowedHosts lets a tunnel hostname (Cloudflare,
+    // ngrok) reach it; the machine itself decides who may connect.
+    preview: { port: 4173, host: true, proxy, allowedHosts: true },
   }
 })
