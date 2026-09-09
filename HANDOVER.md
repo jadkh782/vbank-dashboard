@@ -50,6 +50,7 @@ VITE_DEMO_DEFAULT=false
 | `npm run dev` | Dev server on :5173, reads `.env` live. |
 | `npm run serve` | **Builds** then serves `dist/` on :4173 with the same proxy; accepts any hostname (for tunnels). Rebuild is automatic, so `.env` changes are picked up. |
 | `npm run build` | `tsc && vite build` → `dist/`. |
+| `node scripts/export-errors.mjs out.json` | Full-history export of all errors, processes and queues for the classification workbook (see `scripts/classification/README.md`). |
 
 URL flags: `?demo` forces demo data, `?live` forces the real connection,
 `?view=technical` / `?view=stakeholder`.
@@ -129,9 +130,15 @@ supabase/schema.sql
 ```
 
 Domain rules baked in: business exceptions are **not** failures ("korrekt erkannte
-Aussteuerung"); each issue has a responsibility (V-Bank IT / Exelentic / Fachbereich);
+Aussteuerung"); each issue has a responsibility (V-Bank IT / Exelentic / Neustartfähige
+Vorgänge / Fachbereich) – a system exception on a queue item that does not match the IT
+keywords is a **Neustartfähiger Vorgang** ("Restartable Element": transient, the item is retried, nobody is blamed);
+Exelentic only owns faulted processes with a non-infrastructure cause. Counts are framed
+positively ("30 von 34 laufen störungsfrei", "offene Punkte" instead of "Störungen");
 no € figures, hours and PT only; chart palettes were validated for colour-vision safety –
-don't reorder stack colours casually.
+don't reorder stack colours casually. Phone layout lives in the `@media (max-width: 700px)`
+blocks at the end of `global.css` (master table shows four columns via `data-col`,
+long/short labels via `.lbl-long` / `.lbl-short`).
 
 ## 7. Git state
 

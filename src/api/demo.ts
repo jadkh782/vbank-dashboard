@@ -108,10 +108,13 @@ const FAULTS = [
   'Selector not found: <webctrl tag=\'INPUT\' id=\'kontonummer\' /> at Kernbanksystem.Stammdaten',
 ]
 
+// The first three match the infrastructure keywords (→ V-Bank IT); the last
+// one does not and shows up as a Restartable Element (→ no owner).
 const APP_EXC = [
   'HTTP 503 from Kernbanksystem service /api/v2/konten — retried successfully on next run',
   'Excel process crashed while writing Gebührenbuchung workbook',
   'Login to Archivsystem failed: session token expired',
+  'Kernbanksystem antwortete nicht innerhalb von 30 s – Vorgang erneut eingestellt',
 ]
 
 // Korrekt erkannte Aussteuerungen — the bot correctly handed the item to a person.

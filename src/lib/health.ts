@@ -18,7 +18,9 @@ export const HEALTH_LABELS_DE: Record<Health, string> = {
 export const SOURCE_LABELS_DE: Record<ErrorSource, string> = {
   'Job fault': 'Prozessabbruch',
   'App exception (system)': 'Nicht erfolgreich',
-  'App exception (bot)': 'Prozessfehler',
+  // A transient system exception on one queue item — the item is restarted,
+  // nothing in the automation is broken.
+  'App exception (bot)': 'Neustartfähiger Vorgang',
   // Not a failure: the automation correctly recognised that this item belongs
   // in manual handling and routed it out.
   'Business exception': 'Korrekt erkannte Aussteuerung',
@@ -30,23 +32,28 @@ export const SOURCE_LABELS_DE: Record<ErrorSource, string> = {
 export const RESPONSIBILITY_LABELS: Record<Responsibility, string> = {
   it: 'V-Bank IT',
   automation: 'Exelentic',
+  restartable: 'Neustartfähige Vorgänge',
   business: 'Fachbereich',
 }
 
 export const RESPONSIBILITY_HINTS: Record<Responsibility, string> = {
   it: 'Server, Netzwerk, Zugänge und angebundene Fremdsysteme',
-  automation: 'Automatisierung selbst — Selektoren, Abläufe, Prozesslogik',
+  automation: 'Automatisierung selbst — Abläufe und Prozesslogik',
+  restartable: 'vorübergehende Systemausnahme — der Vorgang wird neu gestartet, kein Eingriff nötig',
   business: 'kein Fehler — korrekt ausgesteuert zur manuellen Bearbeitung',
 }
 
-/** Validated together with the outcome palette; badges always carry their label too. */
+/**
+ * Validated together with the outcome palette; badges always carry their label too.
+ * Restartable Elements are deliberately neutral slate: no owner, no blame.
+ */
 export const RESPONSIBILITY_COLORS: Record<'light' | 'dark', Record<Responsibility, string>> = {
-  light: { automation: '#4a3aa7', it: '#eda100', business: '#2a78d6' },
-  dark: { automation: '#9085e9', it: '#c98500', business: '#3987e5' },
+  light: { automation: '#4a3aa7', it: '#eda100', restartable: '#64748b', business: '#2a78d6' },
+  dark: { automation: '#9085e9', it: '#c98500', restartable: '#94a3b8', business: '#3987e5' },
 }
 
-/** Order used wherever the three appear as one bar — adjacent pairs validated. */
-export const RESPONSIBILITY_ORDER: Responsibility[] = ['automation', 'it', 'business']
+/** Order used wherever they appear as one bar — adjacent pairs validated (slate is neutral). */
+export const RESPONSIBILITY_ORDER: Responsibility[] = ['automation', 'it', 'restartable', 'business']
 
 export function healthOf(
   successRate: number,

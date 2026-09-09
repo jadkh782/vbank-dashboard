@@ -68,7 +68,7 @@ export function Header({
                 }`}
           </span>
           {stake ? (
-            <button className="theme-toggle" onClick={onPresent}>
+            <button className="theme-toggle present-btn" onClick={onPresent}>
               Präsentation
             </button>
           ) : null}

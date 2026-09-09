@@ -130,6 +130,7 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
   const responsibilityCounts = {
     it: allOccurrences.filter((o) => o.responsibility === 'it').length,
     automation: allOccurrences.filter((o) => o.responsibility === 'automation').length,
+    restartable: allOccurrences.filter((o) => o.responsibility === 'restartable').length,
     business: allOccurrences.filter((o) => o.responsibility === 'business').length,
   }
 
@@ -140,22 +141,19 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
   const stripFor = (card: StakeholderCard) =>
     healthStrip(card, jobs, page.queueItems, idsByName, from, to, settings.healthThresholds)
 
-  const criticalCount = affected.filter((c) => c.health === 'critical').length
   const okCount = allCards.length - affected.length
-  // The headline leads with the result, and the result is normally the good
-  // one: only a genuine Störung is stated as a problem. Anything milder reads
-  // as "n of m ran successfully", with the open items named in the sub-line
-  // below so nothing is hidden by the positive framing.
+  // The headline always leads with what is working: "30 von 34 laufen
+  // störungsfrei", never "4 sind gestört". The traffic-light dot still carries
+  // the severity and the sub-line names the open items, so nothing is hidden
+  // by the positive framing — it is just stated the way a status report would.
   const headline =
     health === 'ok'
       ? 'Alle Automatisierungen laufen normal.'
-      : health === 'critical'
-        ? `${deInt(criticalCount)} von ${deInt(allCards.length)} Prozessen ${
-            criticalCount === 1 ? 'ist gestört.' : 'sind gestört.'
-          }`
-        : `${deInt(okCount)} von ${deInt(allCards.length)} Prozessen ${
-            okCount === 1 ? 'ist erfolgreich gelaufen.' : 'sind erfolgreich gelaufen.'
-          }`
+      : okCount === 0
+        ? 'Alle Automatisierungen haben derzeit offene Punkte.'
+        : `${deInt(okCount)} von ${deInt(allCards.length)} Automatisierungen ${
+            okCount === 1 ? 'läuft' : 'laufen'
+          } störungsfrei.`
 
   const visibleCards =
     cardFilter === 'auffaellig' ? allCards.filter((c) => c.health !== 'ok') : allCards
@@ -169,7 +167,7 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
       color: OUTCOME_COLORS.nichtErfolgreich,
     },
     {
-      label: 'Prozessfehler',
+      label: 'Neustartfähige Vorgänge',
       value: occurrences.filter((o) => o.source === 'App exception (bot)').length,
       color: OUTCOME_COLORS.prozessfehler,
     },
@@ -205,10 +203,7 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
           <div className="stake-headline-sub">
             Zeitraum {deDateTime(from)} – {deDateTime(to)} · {deInt(processed)} Vorgänge bearbeitet ·{' '}
             {deInt(allCards.length)} Automatisierungen im Einsatz
-            {affected.length > 0 &&
-              ` · ${deInt(affected.length)} ${
-                affected.length === 1 ? 'benötigt' : 'benötigen'
-              } Aufmerksamkeit`}
+            {affected.length > 0 && ` · ${deInt(affected.length)} mit offenen Punkten`}
           </div>
         </div>
       </section>
@@ -240,7 +235,7 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
         />
         <a className="tile-link" href="#stoerungen">
           <StatTile
-            label="Offene Störungen"
+            label="Offene Punkte"
             value={deInt(occurrences.length)}
             current={occurrences.length}
             previous={occurrencesPrev.length}
@@ -281,8 +276,9 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
         </div>
         <div className="stake-controls">
           <span className="card-sub">
-            {deInt(allCards.length)} Automatisierungen
-            {affected.length > 0 ? `, ${deInt(affected.length)} auffällig` : ''}
+            {affected.length > 0
+              ? `${deInt(okCount)} von ${deInt(allCards.length)} ohne Auffälligkeiten`
+              : `${deInt(allCards.length)} Automatisierungen`}
           </span>
           <div className="seg">
             <button
@@ -295,7 +291,7 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
               className={cardFilter === 'auffaellig' ? 'active' : undefined}
               onClick={() => setCardFilter('auffaellig')}
             >
-              Nur Auffälligkeiten
+              Mit offenen Punkten
             </button>
           </div>
         </div>
@@ -311,12 +307,15 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
       <div className="stake-section-head" id="stoerungen">
         <div>
           <span className="section-eyebrow">
-            <b>03</b> — Störungen
+            <b>03</b> — Offene Punkte
           </span>
-          <h2 className="stake-section-title">Störungen &amp; Zuständigkeit</h2>
+          <h2 className="stake-section-title">Offene Punkte &amp; Zuständigkeit</h2>
         </div>
         <div className="stake-controls">
-          <span className="card-sub">{deInt(occurrences.length)} Störungen im Zeitraum</span>
+          <span className="card-sub">
+            {deInt(occurrences.length)} {occurrences.length === 1 ? 'offener Punkt' : 'offene Punkte'} im
+            Zeitraum
+          </span>
         </div>
       </div>
       <div className="grid">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RESPONSIBILITY_HINTS, RESPONSIBILITY_LABELS } from '../../lib/health'
+import { RESPONSIBILITY_HINTS, RESPONSIBILITY_LABELS, RESPONSIBILITY_ORDER } from '../../lib/health'
 import { useResponsibilityColors } from './Responsibility'
 import { HEALTH_COLORS } from './Health'
 
@@ -97,15 +97,15 @@ export function ColorLegend({
               <div className="legend-entry">
                 <span className="dot" style={{ background: outcomeColors.prozessfehler }} />
                 <span>
-                  <b>Prozessfehler</b>
-                  <div className="dim">die Automatisierung selbst ist gescheitert</div>
+                  <b>Neustartfähiger Vorgang</b>
+                  <div className="dim">vorübergehende Systemausnahme — der Vorgang wird neu gestartet</div>
                 </span>
               </div>
             </div>
 
             <div className="legend-group">
               <div className="legend-group-title">Zuständigkeit</div>
-              {(['it', 'automation', 'business'] as const).map((r) => (
+              {RESPONSIBILITY_ORDER.map((r) => (
                 <div className="legend-entry" key={r}>
                   <span className="dot" style={{ background: resp[r] }} />
                   <span>
@@ -120,8 +120,9 @@ export function ColorLegend({
           <div className="legend-note">
             Ergebnis und Zuständigkeit teilen sich bewusst dieselben Farben: <b>gelb</b> steht
             durchgehend für die Infrastruktur der V-Bank, <b>violett</b> für die Automatisierung
-            von Exelentic und <b>blau</b> für Vorgänge beim Fachbereich. Die Ampelfarben auf den
-            Prozesskarten sind davon unabhängig und stehen immer neben ihrem Wort.
+            von Exelentic, <b>grau</b> für neustartfähige Vorgänge ohne Zuständigkeit und <b>blau</b>{' '}
+            für Vorgänge beim Fachbereich. Die Ampelfarben auf den Prozesskarten sind davon
+            unabhängig und stehen immer neben ihrem Wort.
           </div>
         </>
       ) : null}

@@ -2122,3 +2122,352 @@ textarea:focus-visible {
   text-transform: uppercase;
   color: var(--ink-4);
 }
+
+/* ── Mobile ───────────────────────────────────────────────────────────── */
+
+/* A phone reads the same document one column at a time. The type scale steps
+   down through the tokens, the chrome stacks, and the master table keeps only
+   the columns that answer "which one, how is it, how much" — everything else
+   is one tap away in the detail panel. */
+@media (max-width: 700px) {
+  :root {
+    --t-display: 26px;
+    --t-kpi: 28px;
+    --s8: 40px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .app {
+    padding: 0 16px 40px;
+  }
+
+  .masthead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 16px 0 12px;
+  }
+
+  .masthead-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .masthead-title {
+    white-space: normal;
+    font-size: 15px;
+  }
+
+  .masthead-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Status line on its own row, the buttons below it. */
+  .masthead-right > span:not(.live-dot) {
+    flex: 1 1 100%;
+  }
+
+  /* Fullscreen presentation makes no sense on a phone. */
+  .present-btn {
+    display: none;
+  }
+
+  /* Comfortable tap targets. */
+  .theme-toggle,
+  .seg button,
+  .chip,
+  .nav button {
+    min-height: 36px;
+  }
+
+  .nav {
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav button {
+    white-space: nowrap;
+  }
+
+  .filterbar {
+    gap: 10px 16px;
+    padding: 12px 0;
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .filter-group select {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .range-inputs {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .range-inputs input {
+    flex: 1 1 130px;
+    width: auto;
+    min-width: 0;
+  }
+
+  .grid {
+    gap: 12px;
+    margin-top: var(--s4);
+  }
+
+  .card {
+    padding: 14px 14px 16px;
+  }
+
+  .kpi-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .kpi-row .card {
+    padding: 12px 14px 14px;
+  }
+
+  .kpi-row > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .tile-label {
+    min-height: 0;
+    font-size: 12px;
+  }
+
+  .tile-value {
+    font-size: 24px;
+  }
+
+  .lede-eyebrow,
+  .stake-headline {
+    margin-top: var(--s5);
+  }
+
+  .stake-headline {
+    gap: 10px;
+  }
+
+  .stake-headline .health-dot {
+    margin-top: 10px;
+  }
+
+  .stake-headline-text {
+    max-width: none;
+  }
+
+  .stake-section-head {
+    margin: var(--s8) 0 var(--s3);
+  }
+
+  .stake-section-title {
+    font-size: 20px;
+  }
+
+  .stake-controls {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .outcome-strip-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .outcome-strip-legend {
+    gap: 6px 16px;
+  }
+
+  /* Master table: the four columns that fit a phone. Everything hidden here
+     is shown in the detail panel. */
+  .automation-table [data-col='kind'],
+  .automation-table [data-col='runtime'],
+  .automation-table [data-col='avg'],
+  .automation-table [data-col='owner'],
+  .automation-table [data-col='trend'],
+  .automation-table [data-col='last'] {
+    display: none;
+  }
+
+  .automation-table .tbl-metric .minibar {
+    display: none;
+  }
+
+  .tbl th,
+  .tbl td {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .tbl td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .resp-count b {
+    font-size: 17px;
+  }
+
+  .heatmap-grid {
+    grid-template-columns: 22px repeat(24, 1fr);
+    gap: 1px;
+  }
+
+  .heatmap-cell {
+    height: 12px;
+  }
+
+  .heatmap-day {
+    line-height: 12px;
+    font-size: 8.5px;
+    padding-right: 3px;
+  }
+
+  .heatmap-hour {
+    font-size: 8.5px;
+  }
+
+  .heatmap-legend {
+    flex-wrap: wrap;
+  }
+
+  .heatmap-legend-max {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .tsb-bar-label {
+    width: 68px;
+  }
+
+  .tsb-value {
+    width: 58px;
+  }
+
+  .detail-panel {
+    width: 100vw;
+    border-left: none;
+  }
+
+  .panel-head {
+    padding: 16px 16px 12px;
+  }
+
+  .panel-title {
+    font-size: 20px;
+  }
+
+  .panel-body {
+    padding: 16px 16px 28px;
+  }
+
+  .footer {
+    margin-top: var(--s8);
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+/* Long/short label pairs: the long form everywhere, the short one on phones. */
+.lbl-short {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .lbl-long {
+    display: none;
+  }
+
+  .lbl-short {
+    display: inline;
+  }
+
+  /* The master table is laid out to the phone's width instead of scrolling:
+     four fixed columns, wrapping allowed, long process names break where
+     they must. */
+  .automation-table table.tbl {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .automation-table th,
+  .automation-table td {
+    white-space: normal;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .automation-table [data-col='name'] {
+    width: 38%;
+  }
+
+  .automation-table [data-col='status'] {
+    width: 26%;
+  }
+
+  .automation-table [data-col='volume'] {
+    width: 15%;
+  }
+
+  .automation-table [data-col='quality'] {
+    width: 21%;
+  }
+
+  .automation-table .primary {
+    overflow-wrap: anywhere;
+  }
+
+  .automation-table .tbl-status {
+    white-space: normal;
+    align-items: flex-start;
+  }
+
+  .automation-table .tbl-status .health-dot {
+    margin-top: 5px;
+  }
+
+  .automation-table .tbl-metric {
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 700px) {
+  /* Header row at phone width: the short labels, slightly tighter type. */
+  .automation-table th {
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+  }
+
+  .automation-table [data-col='name'] {
+    width: 34%;
+  }
+
+  .automation-table [data-col='volume'] {
+    width: 18%;
+  }
+
+  .automation-table [data-col='quality'] {
+    width: 22%;
+  }
+
+  .automation-table .primary {
+    hyphens: auto;
+  }
+}

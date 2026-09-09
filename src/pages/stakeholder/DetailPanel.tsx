@@ -35,7 +35,7 @@ const PANEL_LABELS = {
     quality: 'Korrekt verarbeitet',
     last: 'Zuletzt aktiv',
     saved: 'Eingesparte Zeit',
-    noIssues: 'Keine Störungen für diesen Prozess im gewählten Zeitraum.',
+    noIssues: 'Keine offenen Punkte für diese Automatisierung im gewählten Zeitraum.',
     downtime: (m: string) => `Ausfallzeit ${m} Min.`,
     reportedBy: (n: string) => ` · gemeldet von ${n}`,
     seriesOk: 'Erfolgreich',

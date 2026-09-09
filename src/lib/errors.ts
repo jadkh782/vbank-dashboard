@@ -30,11 +30,13 @@ export function classifyAppEx(reason: string, systemKeywords: string[]): 'system
 
 /**
  * Who has to act on an occurrence.
- *  - `it`         infrastructure: servers, network, access, third-party systems
- *  - `automation` the automation itself: selectors, process logic
- *  - `business`   nothing broken — the item was correctly routed out for manual handling
+ *  - `it`          infrastructure: servers, network, access, third-party systems
+ *  - `automation`  the automation itself: a faulted process with a defect in its logic
+ *  - `restartable` a transient system exception on a queue item ("Restartable
+ *                  Element") — the item is simply retried; nobody has to act
+ *  - `business`    nothing broken — the item was correctly routed out for manual handling
  */
-export type Responsibility = 'it' | 'automation' | 'business'
+export type Responsibility = 'it' | 'automation' | 'restartable' | 'business'
 
 export function responsibilityOf(
   source: ErrorSource,
@@ -46,7 +48,10 @@ export function responsibilityOf(
     case 'App exception (system)':
       return 'it'
     case 'App exception (bot)':
-      return 'automation'
+      // A system exception on a single queue item is not a defect in the
+      // automation: the item can be restarted and normally goes through on
+      // the retry. It is reported as a Restartable Element, owned by no one.
+      return 'restartable'
     case 'Business exception':
       return 'business'
     case 'Job fault':

@@ -26,8 +26,10 @@ export function ResponsibilityBadge({ who }: { who: Responsibility }) {
 }
 
 /**
- * "Wer muss handeln" — splits every issue in the window by who owns the fix.
- * An unreachable server is V-Bank IT; a broken selector is Exelentic.
+ * "Wer muss handeln" — splits every open item in the window by who owns it.
+ * An unreachable server is V-Bank IT; a faulted process with a logic defect is
+ * Exelentic; a transient system exception on a queue item is a Restartable
+ * Element and belongs to nobody — the item is simply run again.
  */
 export function ResponsibilitySplit({ counts }: { counts: Record<Responsibility, number> }) {
   const colors = useResponsibilityColors()
@@ -37,7 +39,7 @@ export function ResponsibilitySplit({ counts }: { counts: Record<Responsibility,
   if (total === 0) {
     return (
       <div className="state-block">
-        Keine offenen Störungen — es besteht kein Handlungsbedarf.
+        Keine offenen Punkte — es besteht kein Handlungsbedarf.
       </div>
     )
   }

@@ -8,7 +8,7 @@ export function IssueList({
   groups,
   settings,
   showProcesses = true,
-  emptyText = 'Keine Störungen im gewählten Zeitraum.',
+  emptyText = 'Keine offenen Punkte im gewählten Zeitraum.',
 }: {
   groups: ErrorGroup[]
   settings: AppSettings

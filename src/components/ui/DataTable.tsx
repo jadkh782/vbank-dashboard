@@ -3,6 +3,8 @@ import { useMemo, useState, type ReactNode } from 'react'
 export interface Column<T> {
   key: string
   header: string
+  /** Shorter header shown on phones (see `.lbl-short` in global.css). */
+  shortHeader?: string
   numeric?: boolean
   sortValue?: (row: T) => number | string
   render: (row: T) => ReactNode
@@ -59,6 +61,7 @@ export function DataTable<T>({
             {columns.map((c) => (
               <th
                 key={c.key}
+                data-col={c.key}
                 className={c.numeric ? 'num' : undefined}
                 onClick={() =>
                   c.sortValue &&
@@ -69,7 +72,14 @@ export function DataTable<T>({
                   )
                 }
               >
-                {c.header}
+                {c.shortHeader ? (
+                  <>
+                    <span className="lbl-long">{c.header}</span>
+                    <span className="lbl-short">{c.shortHeader}</span>
+                  </>
+                ) : (
+                  c.header
+                )}
                 {sort?.key === c.key ? <span className="sort-mark">{sort.dir === 'desc' ? '▼' : '▲'}</span> : null}
               </th>
             ))}
@@ -96,7 +106,7 @@ export function DataTable<T>({
               }
             >
               {columns.map((c) => (
-                <td key={c.key} className={c.numeric ? 'num' : undefined}>
+                <td key={c.key} data-col={c.key} className={c.numeric ? 'num' : undefined}>
                   {c.render(row)}
                 </td>
               ))}

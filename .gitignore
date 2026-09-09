@@ -4,3 +4,10 @@ dist
 .env.local
 *.local
 .DS_Store
+
+# Python build artefacts (scripts/classification)
+__pycache__/
+# Classification workbooks contain customer data
+*.xlsx
+# Supabase CLI artefacts
+supabase/.temp/

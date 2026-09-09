@@ -14,6 +14,19 @@ const HEALTH_LABELS_EN: Record<StakeholderCard['health'], string> = {
   critical: 'disrupted',
 }
 
+// One-word status for phones, where "benötigt Aufmerksamkeit" would not fit
+// beside the name column. Swapped in by `.lbl-short` in global.css.
+const HEALTH_SHORT_DE: Record<StakeholderCard['health'], string> = {
+  ok: 'normal',
+  attention: 'auffällig',
+  critical: 'gestört',
+}
+const HEALTH_SHORT_EN: Record<StakeholderCard['health'], string> = {
+  ok: 'healthy',
+  attention: 'attention',
+  critical: 'disrupted',
+}
+
 const L = {
   de: {
     name: 'Automatisierung',
@@ -76,6 +89,7 @@ export function AutomationTable({
     {
       key: 'name',
       header: s.name,
+      shortHeader: 'Name',
       sortValue: (r) => r.displayName,
       render: (r) => (
         <>
@@ -97,7 +111,8 @@ export function AutomationTable({
       render: (r) => (
         <span className="tbl-status">
           <HealthDot health={r.health} />
-          {de ? HEALTH_LABELS_DE[r.health] : HEALTH_LABELS_EN[r.health]}
+          <span className="lbl-long">{de ? HEALTH_LABELS_DE[r.health] : HEALTH_LABELS_EN[r.health]}</span>
+          <span className="lbl-short">{de ? HEALTH_SHORT_DE[r.health] : HEALTH_SHORT_EN[r.health]}</span>
         </span>
       ),
     },
@@ -116,6 +131,7 @@ export function AutomationTable({
     {
       key: 'volume',
       header: s.volume,
+      shortHeader: de ? 'Anzahl' : 'Count',
       numeric: true,
       sortValue: (r) => r.count,
       render: (r) => <span className="primary">{int(r.count)}</span>,
@@ -123,6 +139,7 @@ export function AutomationTable({
     {
       key: 'quality',
       header: s.quality,
+      shortHeader: de ? 'Korrekt' : 'Success',
       numeric: true,
       sortValue: (r) => (isFinite(r.successRate) ? r.successRate : -1),
       render: (r) =>
@@ -171,7 +188,8 @@ export function AutomationTable({
   }
 
   return (
-    <div className="automation-table">
+    // lang drives `hyphens: auto` for long process names on phones.
+    <div className="automation-table" lang={lang}>
       <DataTable
         columns={columns}
         rows={cards}
