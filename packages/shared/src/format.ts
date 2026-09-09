@@ -52,7 +52,8 @@ export function deDelta(current: number, previous: number): { text: string; dire
   if (previous === 0 && current === 0) return { text: '±0', direction: 'flat' }
   if (previous === 0) return { text: 'neu', direction: 'up' }
   const pct = ((current - previous) / previous) * 100
-  if (Math.abs(pct) < 0.05) return { text: '±0 %', direction: 'flat' }
+  // Non-breaking space before the unit: the delta pill must never wrap.
+  if (Math.abs(pct) < 0.05) return { text: '±0 %', direction: 'flat' }
   const sign = pct > 0 ? '+' : ''
-  return { text: `${sign}${pct.toFixed(1).replace('.', ',')} %`, direction: pct > 0 ? 'up' : 'down' }
+  return { text: `${sign}${pct.toFixed(1).replace('.', ',')} %`, direction: pct > 0 ? 'up' : 'down' }
 }

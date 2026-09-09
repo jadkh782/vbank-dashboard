@@ -586,3 +586,20 @@ table.tbl {
   text-underline-offset: 2px;
   cursor: pointer;
 }
+
+/* A tile's unit suffix ("= 29,3 Personentage") takes its own line on phones
+   instead of pushing the page wider than the screen. */
+@media (max-width: 700px) {
+  .tile-value small {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .tile-value {
+    overflow-wrap: anywhere;
+  }
+}
+
+.tile-delta .dir {
+  white-space: nowrap;
+}
