@@ -2,16 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "vbank-dashboard",
+      "name": "dashboard",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["run", "dev", "-w", "apps/dashboard", "--", "--port", "5173", "--strictPort"],
       "port": 5173
     },
     {
-      "name": "vbank-dashboard-alt",
+      "name": "control-board",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5199", "--strictPort"],
-      "port": 5199
+      "runtimeArgs": ["run", "dev", "-w", "apps/control-board", "--", "--port", "5174", "--strictPort"],
+      "port": 5174
     }
   ]
 }
