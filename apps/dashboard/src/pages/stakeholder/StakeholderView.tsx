@@ -4,9 +4,7 @@ import { useTenantData } from '../../hooks/useOrchestrator'
 import { useFilters } from '../../state/FilterContext'
 import {
   activityMatrix,
-  inWindow,
   jobKpis,
-  previousWindow,
   queueKpis,
   queueVolumeOverTime,
   scorecard,
@@ -63,7 +61,7 @@ export function useOutcomeColors() {
       }
 }
 
-export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => void }) {
+export function StakeholderView() {
   const { data, isFetching } = useTenantData()
   const { page, settings } = usePageData()
   const { from, to } = useFilters()
@@ -72,19 +70,10 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
   const [cardFilter, setCardFilter] = useState<CardFilter>('alle')
   const [selected, setSelected] = useState<StakeholderCard | null>(null)
 
-  const prev = previousWindow(from, to)
-  // The stakeholder view has no job-status chips, so it works off all jobs.
-  const jobs = useMemo(
-    () => (data ? inWindow(data.jobs, (j) => j.CreationTime, from, to) : []),
-    [data, from, to],
-  )
-  const jobsPrev = useMemo(
-    () => (data ? inWindow(data.jobs, (j) => j.CreationTime, prev.from, prev.to) : []),
-    [data, prev.from, prev.to],
-  )
   const idsByName = useMemo(() => (data ? queueIdsByName(data) : new Map()), [data])
 
   if (!data || !page) return null
+  const { jobs, jobsPrev } = page
 
   const qk = queueKpis(page.queueItems)
   const qkPrev = queueKpis(page.queueItemsPrev)
@@ -362,14 +351,6 @@ export function StakeholderView({ onShowTechnical }: { onShowTechnical: () => vo
 
       <div className="grid">
         <ColorLegend outcomeColors={OUTCOME_COLORS} />
-      </div>
-
-      <div className="stake-footnote">
-        Detailauswertungen für Fachexperten finden Sie in der{' '}
-        <button className="linklike" onClick={onShowTechnical}>
-          technischen Ansicht
-        </button>
-        .
       </div>
 
       {selected ? (

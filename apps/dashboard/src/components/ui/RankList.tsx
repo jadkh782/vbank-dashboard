@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { MiniBar } from './Badges'
-import { fmtInt, fmtPct } from '../../lib/format'
+import { deInt, dePct } from '../../lib/health'
 
 export interface RankItem {
   label: string
@@ -11,7 +11,7 @@ export interface RankItem {
 }
 
 /** Ranked horizontal bar list — frequency tables that read like a chart. */
-export function RankList({ items, emptyText = 'Nothing in the selected window.' }: { items: RankItem[]; emptyText?: string }) {
+export function RankList({ items, emptyText = 'Nichts im gewählten Zeitraum.' }: { items: RankItem[]; emptyText?: string }) {
   if (items.length === 0) return <div className="state-block">{emptyText}</div>
   const max = Math.max(...items.map((i) => i.count))
   return (
@@ -33,11 +33,11 @@ export function RankList({ items, emptyText = 'Nothing in the selected window.' 
                 <MiniBar fraction={max > 0 ? it.count / max : 0} color={it.color} />
               </td>
               <td className="num" style={{ width: 70, fontWeight: 600 }}>
-                {fmtInt(it.count)}
+                {deInt(it.count)}
               </td>
               {it.share !== undefined ? (
                 <td className="num dim" style={{ width: 60 }}>
-                  {fmtPct(it.share * 100, 1)}
+                  {dePct(it.share * 100, 1)}
                 </td>
               ) : null}
             </tr>

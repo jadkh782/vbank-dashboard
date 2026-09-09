@@ -12,62 +12,13 @@ import {
   jobsForCard,
   queueItemsForCard,
 } from '../../lib/health'
-import { fmtDateTime, fmtDuration, fmtInt, fmtPct } from '../../lib/format'
+import { fmtDuration } from '../../lib/format'
 import { StackedBarsChart } from '../../components/charts/ChartKit'
 import { useChartTheme } from '../../theme'
 import { HealthDot } from './Health'
 import { ResponsibilityBadge } from './Responsibility'
 import { StatusStrip } from './StatusStrip'
 import { IssueList } from './IssueList'
-
-const PANEL_LABELS = {
-  de: {
-    close: 'Schließen',
-    trend: 'Verlauf',
-    figures: 'Kennzahlen',
-    causes: 'Ursachen',
-    manual: 'Gemeldete IT-Störungen',
-    owner: 'zuständig:',
-    avgRun: 'Ø Dauer je Lauf',
-    avgItem: 'Ø Dauer je Vorgang',
-    runs: 'Läufe',
-    items: 'Vorgänge',
-    quality: 'Korrekt verarbeitet',
-    last: 'Zuletzt aktiv',
-    saved: 'Eingesparte Zeit',
-    noIssues: 'Keine offenen Punkte für diese Automatisierung im gewählten Zeitraum.',
-    downtime: (m: string) => `Ausfallzeit ${m} Min.`,
-    reportedBy: (n: string) => ` · gemeldet von ${n}`,
-    seriesOk: 'Erfolgreich',
-    seriesBad: 'Nicht erfolgreich',
-  },
-  en: {
-    close: 'Close',
-    trend: 'Trend',
-    figures: 'Figures',
-    causes: 'Causes',
-    manual: 'Reported IT incidents',
-    owner: 'owner:',
-    avgRun: 'Ø per run',
-    avgItem: 'Ø per item',
-    runs: 'Runs',
-    items: 'Items',
-    quality: 'Success rate',
-    last: 'Last activity',
-    saved: 'Time saved',
-    noIssues: 'No errors for this automation in the selected window.',
-    downtime: (m: string) => `Downtime ${m} min`,
-    reportedBy: (n: string) => ` · reported by ${n}`,
-    seriesOk: 'Successful',
-    seriesBad: 'Not successful',
-  },
-}
-
-const HEALTH_LABELS_EN: Record<StakeholderCard['health'], string> = {
-  ok: 'healthy',
-  attention: 'needs attention',
-  critical: 'disrupted',
-}
 
 function avgDurationMs(card: StakeholderCard, jobs: OrchJob[], items: OrchQueueItem[]): number {
   let sum = 0
@@ -104,7 +55,6 @@ export function DetailPanel({
   manualErrors,
   settings,
   onClose,
-  lang = 'de',
 }: {
   card: StakeholderCard
   strip: StripCell[]
@@ -115,19 +65,13 @@ export function DetailPanel({
   manualErrors: ManualError[]
   settings: AppSettings
   onClose: () => void
-  lang?: 'de' | 'en'
 }) {
   const t = useChartTheme()
   const panelRef = useRef<HTMLDivElement>(null)
-  const L = PANEL_LABELS[lang]
-  const de = lang === 'de'
-  const num = de ? deInt : fmtInt
-  const rate = de ? dePct : (v: number) => fmtPct(v)
-  const when = de ? deDateTime : fmtDateTime
 
   // Esc to close, focus into the panel, restore focus and scrolling on unmount.
   // Focus is restored by card key rather than by node reference: React replaces
-  // the card button on re-render, so the original node is detached by then.
+  // the row on re-render, so the original node is detached by then.
   useEffect(() => {
     const key = card.key
     const onKey = (e: KeyboardEvent) => {
@@ -139,9 +83,7 @@ export function DetailPanel({
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
-      const trigger = document.querySelector<HTMLElement>(
-        `[data-card-key="${CSS.escape(key)}"]`,
-      )
+      const trigger = document.querySelector<HTMLElement>(`[data-card-key="${CSS.escape(key)}"]`)
       trigger?.focus()
     }
   }, [onClose, card.key])
@@ -151,21 +93,20 @@ export function DetailPanel({
   const ownGroups = errorGroups
     .filter((g) => g.processes.some((p) => p.toLowerCase() === card.technicalName.toLowerCase()))
     .sort((a, b) => b.count - a.count)
-  const ownManual = manualErrors.filter(
-    (m) => m.process.toLowerCase() === card.technicalName.toLowerCase(),
-  )
+  const ownManual = manualErrors.filter((m) => m.process.toLowerCase() === card.technicalName.toLowerCase())
 
   const trendRows = strip.map((c) => ({
     label: c.label,
-    [L.seriesOk]: c.successful,
-    [L.seriesBad]: c.total - c.successful,
+    Erfolgreich: c.successful,
+    'Nicht erfolgreich': c.total - c.successful,
   }))
   const trendSeries = [
-    { key: L.seriesOk, color: t.state.Successful },
-    { key: L.seriesBad, color: t.errorSource['Job fault'] },
+    { key: 'Erfolgreich', color: t.state.Successful },
+    { key: 'Nicht erfolgreich', color: t.errorSource['Job fault'] },
   ]
 
   const avg = avgDurationMs(card, cardJobs, cardItems)
+  const humanMinutes = card.kind === 'queue' ? settings.humanMinutesPerItem[card.technicalName] : undefined
 
   return (
     <>
@@ -187,64 +128,58 @@ export function DetailPanel({
             {card.description ? <div className="panel-desc">{card.description}</div> : null}
             <div className="panel-status">
               <HealthDot health={card.health} />
-              {de ? HEALTH_LABELS_DE[card.health] : HEALTH_LABELS_EN[card.health]}
+              {HEALTH_LABELS_DE[card.health]}
               {card.issueResponsibility ? (
                 <>
                   <span className="dim">·</span>
-                  <span className="dim">{L.owner}</span>
+                  <span className="dim">zuständig:</span>
                   <ResponsibilityBadge who={card.issueResponsibility} />
                 </>
               ) : null}
             </div>
           </div>
-          <button className="panel-close" onClick={onClose} aria-label={L.close}>
+          <button className="panel-close" onClick={onClose} aria-label="Schließen">
             ×
           </button>
         </header>
 
         <div className="panel-body">
           <section>
-            <div className="panel-section-title">{L.trend}</div>
+            <div className="panel-section-title">Verlauf</div>
             <StatusStrip cells={strip} large />
             <div style={{ marginTop: 14 }}>
-              <StackedBarsChart
-                data={trendRows}
-                series={trendSeries}
-                height={200}
-                valueFmt={(v) => num(v)}
-              />
+              <StackedBarsChart data={trendRows} series={trendSeries} height={200} valueFmt={(v) => deInt(v)} />
             </div>
           </section>
 
           <section>
-            <div className="panel-section-title">{L.figures}</div>
+            <div className="panel-section-title">Kennzahlen</div>
             <div className="panel-figures">
               <div>
-                <span className="dim">{de ? card.countLabel : card.kind === 'process' ? L.runs : L.items}</span>
-                <b>{num(card.count)}</b>
+                <span className="dim">{card.countLabel}</span>
+                <b>{deInt(card.count)}</b>
               </div>
               <div>
-                <span className="dim">{L.quality}</span>
-                <b>{rate(card.successRate)}</b>
+                <span className="dim">Korrekt verarbeitet</span>
+                <b>{dePct(card.successRate)}</b>
               </div>
               <div>
-                <span className="dim">{card.kind === 'process' ? L.avgRun : L.avgItem}</span>
+                <span className="dim">{card.kind === 'process' ? 'Ø Dauer je Lauf' : 'Ø Dauer je Vorgang'}</span>
                 <b>{fmtDuration(avg)}</b>
               </div>
               <div>
-                <span className="dim">{L.last}</span>
-                <b>{card.lastActivity ? when(card.lastActivity) : '–'}</b>
+                <span className="dim">Zuletzt aktiv</span>
+                <b>{card.lastActivity ? deDateTime(card.lastActivity) : '–'}</b>
               </div>
-              {card.kind === 'queue' && settings.humanMinutesPerItem[card.technicalName] ? (
+              {humanMinutes ? (
                 <div>
-                  <span className="dim">{L.saved}</span>
+                  <span className="dim">Eingesparte Zeit</span>
                   <b>
                     {deHours(
-                      (card.count * settings.humanMinutesPerItem[card.technicalName]) / 60 -
+                      (card.count * humanMinutes) / 60 -
                         cardItems.reduce((a, q) => {
                           if (!q.StartProcessing || !q.EndProcessing) return a
-                          const d =
-                            new Date(q.EndProcessing).getTime() - new Date(q.StartProcessing).getTime()
+                          const d = new Date(q.EndProcessing).getTime() - new Date(q.StartProcessing).getTime()
                           return d >= 0 ? a + d / 3600_000 : a
                         }, 0),
                     )}
@@ -255,27 +190,27 @@ export function DetailPanel({
           </section>
 
           <section>
-            <div className="panel-section-title">{L.causes}</div>
+            <div className="panel-section-title">Ursachen</div>
             <IssueList
               groups={ownGroups}
               settings={settings}
               showProcesses={false}
-              emptyText={L.noIssues}
+              emptyText="Keine offenen Punkte für diese Automatisierung im gewählten Zeitraum."
             />
           </section>
 
           {ownManual.length > 0 ? (
             <section>
-              <div className="panel-section-title">{L.manual}</div>
+              <div className="panel-section-title">Gemeldete IT-Störungen</div>
               {ownManual.map((m) => (
                 <div className="panel-manual" key={m.id}>
                   <div className="primary">
-                    {m.category} · {when(m.time)}
+                    {m.category} · {deDateTime(m.time)}
                   </div>
                   <div>{m.description}</div>
                   <div className="dim">
-                    {m.downtimeMinutes !== undefined ? L.downtime(num(m.downtimeMinutes)) : ''}
-                    {m.reportedBy ? L.reportedBy(m.reportedBy) : ''}
+                    {m.downtimeMinutes !== undefined ? `Ausfallzeit ${deInt(m.downtimeMinutes)} Min.` : ''}
+                    {m.reportedBy ? ` · gemeldet von ${m.reportedBy}` : ''}
                   </div>
                 </div>
               ))}

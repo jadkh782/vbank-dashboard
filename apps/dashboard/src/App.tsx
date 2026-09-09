@@ -5,17 +5,9 @@ import { FilterProvider, useFilters } from './state/FilterContext'
 import { getAuthConfig } from './api/auth'
 import { isDemoMode } from './api/demo'
 import { useTenantData } from './hooks/useOrchestrator'
-import { Header, type PageKey, type ViewKey } from './components/layout/Header'
-import { FilterBar } from './components/layout/FilterBar'
+import { Header } from './components/layout/Header'
 import { StakeholderFilterBar } from './components/layout/StakeholderFilterBar'
 import { StakeholderView } from './pages/stakeholder/StakeholderView'
-import { Overview } from './pages/Overview'
-import { Kennzahlen } from './pages/Kennzahlen'
-import { Jobs } from './pages/Jobs'
-import { Queues } from './pages/Queues'
-import { Errors } from './pages/Errors'
-import { ManualErrors } from './pages/ManualErrors'
-import { Settings } from './pages/Settings'
 
 const queryClient = new QueryClient()
 
@@ -33,13 +25,12 @@ function SetupPanel() {
           In the project folder, copy <code>.env.example</code> to <code>.env</code>.
         </li>
         <li>
-          Automation Cloud: set <code>VITE_UIPATH_ORG</code> and <code>VITE_UIPATH_TENANT</code> (the two names
-          in your Orchestrator URL: <code>cloud.uipath.com/&#123;org&#125;/&#123;tenant&#125;</code>).
           Self-hosted Orchestrator (e.g. behind a VPN): set <code>VITE_UIPATH_ORCHESTRATOR_URL</code>,{' '}
-          <code>VITE_UIPATH_IDENTITY_URL</code> and <code>VITE_UIPATH_TENANT</code> instead.
+          <code>VITE_UIPATH_IDENTITY_URL</code> and <code>VITE_UIPATH_TENANT</code>. Automation Cloud: set{' '}
+          <code>VITE_UIPATH_ORG</code> and <code>VITE_UIPATH_TENANT</code> instead.
         </li>
         <li>
-          Add either a Personal Access Token (<code>VITE_UIPATH_PAT</code>) or an External Application's{' '}
+          Add either a Personal Access Token (<code>VITE_UIPATH_PAT</code>) or an External Application&apos;s{' '}
           <code>VITE_UIPATH_CLIENT_ID</code> and <code>VITE_UIPATH_CLIENT_SECRET</code> with read scopes for
           Jobs, Queues, Folders, Execution and Monitoring.
         </li>
@@ -52,22 +43,9 @@ function SetupPanel() {
   )
 }
 
-function initialView(): ViewKey {
-  const p = new URLSearchParams(window.location.search).get('view')
-  if (p === 'technical' || p === 'stakeholder') return p
-  return localStorage.getItem('vbank-view') === 'technical' ? 'technical' : 'stakeholder'
-}
-
 function Shell() {
-  const [view, setView] = useState<ViewKey>(initialView)
-  const [page, setPage] = useState<PageKey>('overview')
   const { refreshMs, from, to } = useFilters()
-  const { data, error, isLoading, isFetching, refetch, folders } = useTenantData()
-
-  const switchView = (v: ViewKey) => {
-    setView(v)
-    localStorage.setItem('vbank-view', v)
-  }
+  const { data, error, isLoading, folders } = useTenantData()
 
   // Presentation mode: fullscreen + larger type for meeting-room screens.
   // Leaving fullscreen (Esc or the browser's own control) always exits.
@@ -84,81 +62,35 @@ function Shell() {
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
 
-  const stake = view === 'stakeholder'
-
   return (
     <div className="app">
-      <Header
-        view={view}
-        onSwitchView={switchView}
-        page={page}
-        onNavigate={setPage}
-        lastUpdated={data?.fetchedAt ?? null}
-        live={refreshMs !== false}
-        onPresent={enterPresentation}
-      />
-      {stake ? (
-        <div className="print-period">
-          Automatisierung bei der V-Bank · Zeitraum {from.toLocaleString('de-DE')} –{' '}
-          {to.toLocaleString('de-DE')}
-        </div>
-      ) : null}
-      {stake ? (
-        <StakeholderFilterBar folders={folders.data ?? []} />
-      ) : (
-        <FilterBar folders={folders.data ?? []} onRefresh={() => refetch()} />
-      )}
+      <Header lastUpdated={data?.fetchedAt ?? null} live={refreshMs !== false} onPresent={enterPresentation} />
+      <div className="print-period">
+        Automatisierung bei der V-Bank · Zeitraum {from.toLocaleString('de-DE')} – {to.toLocaleString('de-DE')}
+      </div>
+      <StakeholderFilterBar folders={folders.data ?? []} />
 
       {folders.error ? (
         <div className="error-banner">
-          {stake ? 'Verbindung zu UiPath Orchestrator fehlgeschlagen: ' : 'Could not reach Orchestrator: '}
-          {(folders.error as Error).message}
+          Verbindung zu UiPath Orchestrator fehlgeschlagen: {(folders.error as Error).message}
         </div>
       ) : error ? (
-        <div className="error-banner">
-          {stake ? 'Datenabruf fehlgeschlagen: ' : 'Data request failed: '}
-          {(error as Error).message}
-        </div>
+        <div className="error-banner">Datenabruf fehlgeschlagen: {(error as Error).message}</div>
       ) : null}
 
       {isLoading && !data ? (
         <div className="state-block" style={{ paddingTop: 90 }}>
-          <b>{stake ? 'Daten werden geladen…' : 'Loading tenant data…'}</b>
-          {stake
-            ? 'Aktuelle Zahlen werden aus UiPath Orchestrator abgerufen.'
-            : 'Fetching jobs, queues and alerts from Orchestrator.'}
+          <b>Daten werden geladen…</b>
+          Aktuelle Zahlen werden aus UiPath Orchestrator abgerufen.
         </div>
       ) : null}
 
-      {data?.truncated && !stake ? (
-        <div className="notice">
-          Large result set: some queries hit the 10,000-record safety cap, so figures for this window may be
-          partial. Narrow the time range for exact numbers.
-        </div>
-      ) : null}
-
-      {data ? (
-        stake ? (
-          <StakeholderView onShowTechnical={() => switchView('technical')} />
-        ) : (
-          <>
-            {page === 'overview' ? <Overview /> : null}
-            {page === 'kennzahlen' ? <Kennzahlen /> : null}
-            {page === 'jobs' ? <Jobs /> : null}
-            {page === 'queues' ? <Queues /> : null}
-            {page === 'errors' ? <Errors /> : null}
-            {page === 'manual' ? <ManualErrors /> : null}
-            {page === 'settings' ? <Settings /> : null}
-          </>
-        )
-      ) : null}
+      {data ? <StakeholderView /> : null}
 
       <footer className="footer">
-        <span>Exelentic GmbH · Vbank Intelligent Analysis Dashboard</span>
+        <span>Exelentic GmbH · Automatisierung bei der V-Bank</span>
         <span>
-          {stake
-            ? `Quelle: ${isDemoMode() ? 'Demodaten' : 'UiPath Orchestrator'} · Daten werden automatisch aktualisiert`
-            : `Source: ${isDemoMode() ? 'Demo data (remove ?demo from the URL for live data)' : 'UiPath Orchestrator'} · data refreshes ${refreshMs === false ? 'manually' : 'automatically'}`}
+          Quelle: {isDemoMode() ? 'Demodaten' : 'UiPath Orchestrator'} · Daten werden automatisch aktualisiert
         </span>
       </footer>
     </div>

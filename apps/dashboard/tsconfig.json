@@ -2,10 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
-    // Flipped to true in M2 once the technical pages and their dead imports are gone.
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "types": ["vite/client"]
   },
   "include": ["src", "vite.config.ts"]
 }

@@ -1,24 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { startOfDay } from 'date-fns'
-import type { JobState } from '../api/types'
 
 export type PresetKey = 'today' | '24h' | '7d' | '30d' | 'custom'
-
-export const STATUS_OPTIONS: JobState[] = ['Successful', 'Faulted', 'Stopped', 'Running', 'Pending', 'Suspended']
-
-/**
- * Stacking order for state-colored charts. Deliberate: keeps green (Successful)
- * and red (Faulted) from ever being adjacent segments — the pair is
- * indistinguishable under red-green color-vision deficiency. Validated with the
- * dataviz palette checker in both light and dark modes.
- */
-export const STATE_STACK_ORDER: JobState[] = ['Successful', 'Running', 'Faulted', 'Suspended', 'Stopped', 'Pending']
 
 export interface Filters {
   preset: PresetKey
   from: Date
   to: Date
-  statuses: JobState[]
   folderId: number | 'all'
   refreshMs: number | false
 }
@@ -26,7 +14,6 @@ export interface Filters {
 interface FilterApi extends Filters {
   applyPreset: (p: Exclude<PresetKey, 'custom'>) => void
   setRange: (from: Date, to: Date) => void
-  toggleStatus: (s: JobState) => void
   setFolderId: (id: number | 'all') => void
   setRefreshMs: (ms: number | false) => void
 }
@@ -52,7 +39,6 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const [preset, setPreset] = useState<PresetKey>('7d')
   const [from, setFrom] = useState<Date>(initial.from)
   const [to, setTo] = useState<Date>(initial.to)
-  const [statuses, setStatuses] = useState<JobState[]>([...STATUS_OPTIONS])
   const [folderId, setFolderId] = useState<number | 'all'>('all')
   const [refreshMs, setRefreshMs] = useState<number | false>(60_000)
 
@@ -73,7 +59,6 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       preset,
       from,
       to,
-      statuses,
       folderId,
       refreshMs,
       applyPreset: (p) => {
@@ -87,12 +72,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
         setFrom(f)
         setTo(t)
       },
-      toggleStatus: (s) =>
-        setStatuses((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])),
       setFolderId,
       setRefreshMs,
     }),
-    [preset, from, to, statuses, folderId, refreshMs],
+    [preset, from, to, folderId, refreshMs],
   )
 
   return <FilterContext.Provider value={api}>{children}</FilterContext.Provider>

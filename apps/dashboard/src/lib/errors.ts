@@ -8,15 +8,6 @@ export type ErrorSource =
   | 'Business exception'
   | 'Manual (IT)'
 
-/** Stacking/legend order — validated for CVD safety in both themes; keep as is. */
-export const ERROR_SOURCES: ErrorSource[] = [
-  'Job fault',
-  'App exception (system)',
-  'Business exception',
-  'App exception (bot)',
-  'Manual (IT)',
-]
-
 /**
  * Classify an application exception as system-caused (infrastructure, servers,
  * connectivity) vs. bot-caused, by configurable keyword match on the message.
