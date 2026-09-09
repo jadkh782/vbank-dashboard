@@ -12,10 +12,11 @@
   ],
   "scripts": {
     "dev": "npm run dev -w apps/dashboard",
+    "dev:cb": "npm run dev -w apps/control-board",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
-    "check": "node scripts/check-orchestrator.mjs",
+    "ingest": "npm run ingest -w services/ingest --",
     "serve": "npm run serve -w apps/dashboard"
   },
   "devDependencies": {

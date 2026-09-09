@@ -1,162 +1,121 @@
-# Handover – Vbank Intelligent Analysis Dashboard
+# Handover – V-Bank Automatisierung (v2)
 
-State as of 8 Sep 2026. Read this first in a new session; the README covers the
-product, this file covers *how things are wired right now* and why.
+State as of 9 Sep 2026, branch **`v2`**. Read this first in a new session. `main` still holds
+the old single SPA (tag `v1-spa-demo`) that the Vercel showcase runs in demo mode — leave it
+until the cut-over in §7.
 
 ## 1. What it is
 
-React 18 + Vite + TypeScript single-page app over **UiPath Orchestrator**. No backend:
-the Vite server (dev or preview) proxies API calls so the browser never talks to
-Orchestrator directly. Data is fetched per folder, aggregated in the browser.
+An npm-workspaces monorepo with three deliverables and two shared packages:
 
-Two views, one codebase:
+| Path | What | Where it runs |
+|---|---|---|
+| `apps/dashboard` | **Statusbericht** — the public stakeholder dashboard (German). Reads **published days only** from Supabase, or demo data. Login via Supabase Auth. | Vercel |
+| `apps/control-board` | **Control Board** — internal review app (German). Every failed transaction and faulted run is categorised by a person; days are published as a queue. | VPN laptop (static build) |
+| `services/ingest` | Worker: UiPath Orchestrator → Supabase, daily at 02:00 Berlin + on-demand. The only component that talks to Orchestrator. | VPN laptop (`ingest serve`) |
+| `packages/shared` | Pure TS: domain types, six categories (+ validated colours), aggregates, `normalizeMessage`, `familyKey` (Python-parity), `suggest`, retry-chain collapse, Berlin-day helpers, demo generator. | — |
+| `packages/ui` | React primitives (DataTable, StatTile, ChartKit, Drawer, badges, theme) and the design-system CSS (tokens, base, chrome, forms, drawer). | — |
+| `supabase/migrations` | 0001 schema · 0002 RLS · 0003 published views + RPCs · 0004 triggers. | Supabase (EU) |
+| `tools/classification` | Python workbook builder (`build_xlsx.py`, `family.py` = oracle for `familyKey`, `dump_family_keys.py`). | dev machine |
 
-- **Stakeholder-Ansicht** (default, German, `?view=stakeholder`) – executive status report.
-- **Technical view** (`?view=technical`) – Overview, Kennzahlen, Jobs, Queues, Errors,
-  Manual Errors, Settings.
+**The customer never sees the Control Board.** The dashboard shows "Datenstand: <letzter
+veröffentlichter Tag>", presets end there, and nothing in it names review, publication or
+Orchestrator. Grep gates in §6 keep it that way.
 
-## 2. Where the live data comes from
+## 2. Domain rules (decided Sep 9, 2026)
 
-| Item | Value |
-|---|---|
-| Orchestrator | standalone on-prem **22.10**, `https://asvbank17.v-bank.com` |
-| Tenant | `Default` |
-| Reachability | **only inside the V-Bank network / Barracuda VPN** (private IP 10.215.13.17). The public DNS record points at an AWS gateway that answers 403 to everyone. |
-| Auth | External Application (client credentials), application scopes `OR.Jobs.Read OR.Queues.Read OR.Folders.Read OR.Monitoring.Read OR.Execution.Read` |
-| Folders visible | 29 (12 contain queues) |
-| License endpoint | returns 403 for the External App → utilization uses the capacity set under Settings |
-
-Credentials live only in the gitignored `.env` (copy per machine). **Quote the client
-ID and secret** – the secret contains `#`, which unquoted becomes a comment and empties the
-value.
-
-`.env` layout for this deployment:
-
-```
-VITE_UIPATH_ORCHESTRATOR_URL=https://asvbank17.v-bank.com
-VITE_UIPATH_IDENTITY_URL=https://asvbank17.v-bank.com/identity
-VITE_UIPATH_TENANT=Default
-VITE_UIPATH_CLIENT_ID="…"
-VITE_UIPATH_CLIENT_SECRET="…"
-VITE_UIPATH_SCOPES=OR.Jobs.Read OR.Queues.Read OR.Folders.Read OR.Monitoring.Read OR.Execution.Read
-VITE_DEMO_DEFAULT=false
-```
+- **Six categories** for every open point: Exelentic/UiPath · V-Bank IT · Neustartfähiger Vorgang
+  (neutral, nobody blamed) · Nicht als Fehler anzeigen (counts as correct, never listed) ·
+  Fachbereich · Avaloq. Keys in `packages/shared/src/categories.ts`. Colours validated with the
+  dataviz checker in the bar order violet → teal → amber → blue, slate last.
+- **Retry chains**: one transaction per chain, judged by its **final attempt**, attributed to the
+  Berlin day of its **first** attempt. Retried-then-successful = **one success** (shown as
+  "Nach Neustart erfolgreich"). An orphan `Retried` is pending, never a failure.
+- **Business exceptions** = "Korrekt erkannte Aussteuerung", counted as correct.
+- **Review**: everything open must be confirmed by a person (bulk "Vorschläge übernehmen" counts).
+  Suggestions: recovered → Neustartfähig · business → nicht anzeigen · exact normalised message
+  mapping · family mapping · keyword fallback (V-Bank IT, low) · none → "ohne Vorschlag".
+  Every confirmation feeds `mapping_messages` / `mapping_families` (trigger `trg_learn`).
+- **Publishing**: once a day, by a person, **in order** (oldest unpublished day first; the
+  dashboard's Datenstand waits). Published days are **frozen** (`DAY_FROZEN`); un-publish with a
+  reason (latest day only, admins may override). Late ingest changes set `days.stale`.
+- Positive framing ("30 von 34 laufen störungsfrei", "Offene Punkte"), no € figures, hours + PT.
 
 ## 3. Commands
 
-| Command | Purpose |
+```
+npm install                       # once; links the workspaces
+npm run typecheck                 # every package
+npm test                          # vitest: shared (aggregates, chains, suggest, Berlin days, family parity), apps
+npm run build                     # every app
+npm run dev                       # dashboard on :5173  (add ?demo for demo data)
+npm run dev:cb                    # control board on :5174 (needs apps/control-board/.env)
+npm run ingest -- <cmd>           # worker CLI, see services/ingest/README.md
+```
+
+Ingest commands: `check` · `catalog` · `daily` · `backfill --from YYYY-MM-DD [--to …]` ·
+`import-workbook <xlsx> [--force] [--allow-mismatch]` · `serve`.
+
+Demo: `?demo` on any dashboard URL, or `VITE_DEMO_DEFAULT=true` at build time (the
+`vbank-dashboard-demo` Vercel project). No login, no database, 90 days of generated data up to
+yesterday. `?live` forces the real connection.
+
+## 4. Environments
+
+| File | Keys |
 |---|---|
-| `npm run check` | Token → folders → jobs connectivity test with a hint per failure. Run this first when anything looks wrong. |
-| `npm run dev` | Dev server on :5173, reads `.env` live. |
-| `npm run serve` | **Builds** then serves `dist/` on :4173 with the same proxy; accepts any hostname (for tunnels). Rebuild is automatic, so `.env` changes are picked up. |
-| `npm run build` | `tsc && vite build` → `dist/`. |
-| `node scripts/export-errors.mjs out.json` | Full-history export of all errors, processes and queues for the classification workbook (see `scripts/classification/README.md`). |
+| `apps/dashboard/.env` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_DEMO_DEFAULT` (demo build only) |
+| `apps/control-board/.env` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+| `services/ingest/.env` | `ORCH_URL`, `IDENTITY_URL`, `TENANT`, `CLIENT_ID`, `CLIENT_SECRET` (**quote it, it contains `#`**), `SCOPES`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `LOOKBACK_DAYS`, `DAILY_AT` |
 
-URL flags: `?demo` forces demo data, `?live` forces the real connection,
-`?view=technical` / `?view=stakeholder`.
-
-## 4. How it is hosted right now
-
-- **Live, temporary:** a spare laptop on the Barracuda VPN runs `npm run serve`; VS Code's
-  Ports panel forwards 4173 to a `devtunnels.ms` URL (visibility must be **Public** for
-  others; Private = only the signed-in GitHub account). Works only while VS Code is open
-  and signed in. No login in front of it – share the URL carefully.
-- **Vercel:** public showcase only. Cannot reach the VPN. Set `VITE_DEMO_DEFAULT=true`
-  in Vercel env vars so it shows demo data instead of the setup screen (not yet done at
-  time of writing – check the Vercel project).
-- **Planned proper hosting:** Oracle Cloud Always Free x86 VM with the Barracuda Linux
-  client, nginx serving `dist/` with the two proxy rules and upstream keep-alive,
-  Cloudflare Tunnel + Access in front. Alternative preferred by banks: an internal IIS/nginx
-  site provided by V-Bank IT. Both variants are on the one-page deck
-  `Vbank-Dashboard-Betriebsmodell.pptx` (Desktop).
-
-The reverse-proxy rules any host needs:
-
-```
-/orch/*      → https://asvbank17.v-bank.com/*           (+ X-UIPATH-TenantName: Default is set by the app)
-/identity/*  → https://asvbank17.v-bank.com/identity/*
-```
-Keep upstream connections alive – a new TLS connection to this host costs ~2.3 s.
+The anon key is public by design; RLS + the `profiles.role` decide. The service-role key lives
+only in `services/ingest/.env` on the VPN machine (outside OneDrive sync; rotate when moving to
+the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.com`, tenant
+`Default`, reachable only inside the Barracuda VPN (public DNS answers 403 = VPN down).
 
 ## 5. Hard-won facts (don't re-learn these)
 
-1. **22.10 rejects `$expand=ProcessingException`** (400 "Ungültige OData-Abfrageoptionen").
-   The exception is a complex inline property → it is in `$select` instead
-   (`src/api/endpoints.ts`, `QI_SELECT`). Works on Cloud too.
-2. **Per-connection cost ~2.3 s.** The Vite proxy uses a keep-alive `https.Agent`
-   (`vite.config.ts`). Without it a refresh took > 1 min.
-3. **Fan-out is throttled.** Per-folder queries run through a pool of 5 (`pooled` in
-   `endpoints.ts`); queue items are only fetched for folders that have queue definitions.
-   Full load ≈ 5–9 s for the 7-day window.
-4. **Tenant query:** `refetchOnWindowFocus: false`, `staleTime: 30 s`, refresh interval
-   default 1 min (per browser, Refresh control in the technical view). Every open tab
-   polls on its own (~70 requests per refresh).
-5. **VPN can look up but be dead** (adapter "Up", routes present, no traffic, DNS falls
-   back to the public 403 endpoint). Symptom in the app: "Token request failed (403/404)".
-   Fix: reconnect the Barracuda client, then `npm run check`.
-6. The stakeholder view renders nothing (no spinner) if the tenant query is disabled or
-   paused; the technical view shows a loading block. Seen once after a Vite restart,
-   not reproducible afterwards.
+1. 22.10 rejects `$expand=ProcessingException` → it is in `$select`. It may also reject
+   `AncestorId/RetryNumber/ManualAncestorId` → the worker probes FULL → BASE → MIN per run and
+   stores the variant in `ingest_state.qi_select_variant`; MIN links chains by reference.
+2. Every new TLS connection to the host costs ~2.3 s → one keep-alive pool (undici), 5 folders in
+   parallel.
+3. `business_day` is computed in TS (`berlinDay`), not SQL: `at time zone` is not immutable, so
+   Postgres cannot do it in a generated column.
+4. `familyKey` must stay byte-identical to `tools/classification/family.py`: the equivalence test
+   runs against a gitignored oracle (`packages/shared/test/fixtures/family-keys.json`, written by
+   `dump_family_keys.py` from `Desktop/Vbank-Fehlerklassifizierung-daten.json`) — 2 075/2 075.
+   `import-workbook` re-checks every variant against the workbook's Muster.
+5. Shell heredocs longer than ~200 lines get truncated in this environment; use the file tool.
+6. The Vercel CLI is not logged in on this PC; Vercel settings are changed in the web UI.
 
-## 6. Code map
+## 6. Verification gates
 
-```
-src/
-  api/
-    auth.ts        token cache; getAuthConfig() (cloud vs selfHosted); authHeaders()
-    client.ts      orchFetch, paging (1000/page, 10 pages cap)
-    endpoints.ts   fetchFolders, fetchTenantData (pool, queue-def gating), QI_SELECT
-    demo.ts        deterministic demo data = V-Bank Prozessübersicht (26 real process names); isDemoMode()
-    store.ts       Supabase or localStorage (manual errors, settings)
-    types.ts
-  hooks/
-    useOrchestrator.ts  useFolders, useTenantData (react-query)
-    usePageData.ts      window slicing, status filter, previous period
-  lib/
-    aggregate.ts   KPIs, scorecard, timeSaved, heatmap
-    errors.ts      error normalisation/grouping, responsibility (IT / Exelentic / Fachbereich)
-    health.ts      health thresholds, friendly names, stakeholder cards, status strips
-    dates.ts, format.ts
-  pages/           Overview, Kennzahlen, Jobs, Queues, Errors, ManualErrors, Settings
-  pages/stakeholder/  StakeholderView, AutomationTable, DetailPanel, OutcomeStrip
-  components/      layout (Header, FilterBar, StakeholderFilterBar), charts, ui
-  state/FilterContext.tsx   from/to/preset/statuses/folder/refreshMs
-  styles/global.css         token CSS ("Azure Clarity": ink 0F172A, brand 3B82F6)
-  theme.ts
-scripts/check-orchestrator.mjs   npm run check
-vite.config.ts     proxy for dev + preview, keep-alive agent, self-hosted URL handling
-vercel.json        rewrites for Automation Cloud only (placeholders) – irrelevant for V-Bank
-supabase/schema.sql
-```
+- `npm run typecheck && npm test && npm run build` (unused locals/params are errors).
+- Public dashboard must not mention the review layer:
+  `grep -rniE "control board|veröffentlich|orchestrator" apps/dashboard/src` → only auth wording.
+- Dashboard in the browser (`?demo`): Datenstand in the header, presets end there, phone width
+  shows name/status/volume/quality without horizontal scroll, drawer opens/closes with Esc.
 
-Domain rules baked in: business exceptions are **not** failures ("korrekt erkannte
-Aussteuerung"); each issue has a responsibility (V-Bank IT / Exelentic / Neustartfähige
-Vorgänge / Fachbereich) – a system exception on a queue item that does not match the IT
-keywords is a **Neustartfähiger Vorgang** ("Restartable Element": transient, the item is retried, nobody is blamed);
-Exelentic only owns faulted processes with a non-infrastructure cause. Counts are framed
-positively ("30 von 34 laufen störungsfrei", "offene Punkte" instead of "Störungen");
-no € figures, hours and PT only; chart palettes were validated for colour-vision safety –
-don't reorder stack colours casually. Phone layout lives in the `@media (max-width: 700px)`
-blocks at the end of `global.css` (master table shows four columns via `data-col`,
-long/short labels via `.lbl-long` / `.lbl-short`).
+## 7. Cut-over (not done yet — main still serves the v1 showcase)
 
-## 7. Git state
+1. Create the Supabase project (EU), `npx supabase link`, `npx supabase db push`
+   (`supabase/README.md`); create users, insert `profiles` rows.
+2. Vercel: create **`vbank-dashboard-demo`** (Root Directory `apps/dashboard`, "Include source
+   files outside of Root Directory" on, env `VITE_DEMO_DEFAULT=true`) — this is the URL to
+   share. Point the production project at `apps/dashboard` too, with the Supabase keys.
+3. Merge `v2` → `main` **after** step 2 (Vercel builds from the root until the Root Directory
+   changes). Tag `v2-monorepo`.
+4. Laptop: `services/ingest/.env`, `npm run ingest -- check` (records the select variant) →
+   `catalog` → `import-workbook …_v2.xlsx` (once the meeting filled it) →
+   `backfill --from <today−90>` → Control Board: accept hoch/mittel suggestions, review the rest,
+   publish days in order → `ingest serve` under Task Scheduler (see `services/ingest/README.md`).
+   Serve the Control Board build on the laptop (`npm run build -w apps/control-board`, any static
+   server with SPA fallback, private port forward).
+5. Stop the old `npm run serve` tunnel.
 
-Local `main` is ahead of GitHub (`jadkh782/vbank-dashboard`) by the commits made in this
-session; **push before starting elsewhere**:
+## 8. Open items
 
-```
-git push origin main
-```
-
-Recent commits (newest first): serve rebuilds first · `npm run serve` proxy mode ·
-demo data by default on public hosts + V-Bank demo processes · connect to self-hosted
-Orchestrator behind VPN · restyle to Azure Clarity.
-
-## 8. Open items / ideas
-
-- Put a login in front of the live URL (Cloudflare Access) before wider sharing.
-- Move hosting from the laptop to the Oracle VM or a V-Bank-internal server.
-- Set `VITE_DEMO_DEFAULT=true` on Vercel.
-- Supabase project for shared manual errors/settings not created yet (localStorage fallback active).
-- Stakeholder view: show a loading/paused state instead of an empty page.
+- `tools/seed-demo` (demo rows in a demo Supabase project for showing the Control Board) — optional.
+- pgTAP smoke tests for RLS/RPCs on a staging project (no local Postgres here).
+- Oracle VM instead of the laptop (Barracuda Linux client, systemd units).
