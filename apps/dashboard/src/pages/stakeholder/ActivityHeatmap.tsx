@@ -1,8 +1,8 @@
 import { Fragment } from 'react'
-import type { ActivityMatrix } from '../../lib/aggregate'
-import { WEEKDAYS_DE } from '../../lib/aggregate'
-import { deInt } from '../../lib/health'
-import { useThemeMode } from '../../theme'
+import type { ActivityMatrix } from '@vbank/shared'
+import { WEEKDAYS_DE } from '@vbank/shared'
+import { deInt } from '@vbank/shared'
+import { useThemeMode } from '@vbank/ui'
 
 // Single-hue sequential ramp (dataviz reference blue). Light mode runs
 // light -> dark; dark mode runs dark -> bright so magnitude always reads as

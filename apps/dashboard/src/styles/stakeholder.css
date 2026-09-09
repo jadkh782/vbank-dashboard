@@ -1,0 +1,786 @@
+/* Stakeholder view: verdict, sections, strips, master table, outcome strip, time saved, heatmap, categories, legend. */
+
+/* ── Stakeholder view ─────────────────────────────────────────────────── */
+
+/* The verdict. A consulting deck leads with the conclusion, not a container —
+   so this is set type on the page, not a card. It is the largest thing here
+   on purpose: everything below is evidence for this one sentence. */
+
+.stake-headline {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-top: var(--s6);
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.stake-headline .health-dot {
+  width: 11px;
+  height: 11px;
+  margin-top: 13px;
+}
+
+.stake-headline-text {
+  font-family: var(--font-display);
+  font-size: var(--t-display);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  line-height: 1.16;
+  color: var(--ink);
+  max-width: 34ch;
+  text-wrap: balance;
+}
+
+.stake-headline-sub {
+  margin-top: 11px;
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 0.005em;
+}
+
+.health-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Section rhythm ───────────────────────────────────────────────────────
+   Sections are opened by a heavy rule and a numbered kicker, then named in
+   serif. This is what carries the "document" reading: the reader always knows
+   which chapter they are in, and no box is needed to tell them. */
+
+.stake-section-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* The opening section is titled by its own verdict, so it takes the kicker
+   alone — a second heading above the conclusion would bury the lede. */
+
+.lede-eyebrow {
+  margin-top: var(--s6);
+  padding-top: 13px;
+  border-top: 1.5px solid var(--rule-strong);
+}
+
+.lede-eyebrow + .stake-headline {
+  margin-top: 0;
+}
+
+/* A section head already opens the space below it. */
+
+.stake-section-head + .grid,
+.stake-section-head + .card,
+.stake-section-head + .outcome-strip {
+  margin-top: 0;
+}
+
+.section-eyebrow {
+  display: block;
+  font-family: var(--font);
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+
+/* The numeral is the only place the brand navy appears in running text. */
+
+.section-eyebrow b {
+  color: var(--brand);
+  font-weight: 700;
+  margin-right: 7px;
+}
+
+:root[data-theme='dark'] .section-eyebrow b {
+  color: var(--brand-2);
+}
+
+.stake-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.stake-issue-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.stake-issue-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.stake-issue-count .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Section header with card controls */
+
+.stake-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: var(--s8) 0 var(--s4);
+  padding-top: 13px;
+  border-top: 1.5px solid var(--rule-strong);
+}
+
+.stake-section-head .stake-section-title {
+  margin: 0;
+}
+
+.stake-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+
+.tile-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.tile-link:hover .card {
+  border-color: var(--border-strong);
+}
+
+/* ── Status strip ─────────────────────────────────────────────────────── */
+
+.status-strip {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  margin-top: 11px;
+  height: 16px;
+}
+
+.status-strip.large {
+  height: 26px;
+  gap: 3px;
+}
+
+.strip-block {
+  flex: 1 1 0;
+  min-width: 2px;
+  border-radius: 0;
+}
+
+/* Anchored to the strip (not the block) so the readout always stays inside
+   the card — a block-anchored tooltip overflows the page on the right column.
+   display:none rather than opacity keeps hidden tooltips out of the layout. */
+
+.strip-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 170px;
+  padding: 8px 11px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-align: left;
+  pointer-events: none;
+}
+
+.strip-tip b {
+  display: block;
+  color: var(--ink);
+}
+
+.strip-block:hover .strip-tip {
+  display: block;
+}
+
+/* ── Master automation table ──────────────────────────────────────────── */
+
+.automation-table .tbl td {
+  vertical-align: middle;
+}
+
+.tbl tr.row-clickable {
+  cursor: pointer;
+}
+
+.tbl tr.row-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.tbl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.tbl-metric {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.tbl-metric .minibar {
+  min-width: 46px;
+  width: 46px;
+}
+
+.tbl-strip {
+  display: block;
+  width: 108px;
+}
+
+.tbl-strip .status-strip {
+  margin-top: 0;
+  height: 13px;
+}
+
+/* ── Outcome strip (slim distribution line) ───────────────────────────── */
+
+/* Sits directly under the KPI register in section 01, so it is ruled like a
+   continuation of that band rather than boxed as a separate card. */
+
+.outcome-strip {
+  margin-top: var(--s5);
+  padding: 0 0 var(--s2);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.outcome-strip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 8px;
+  margin-bottom: 11px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.outcome-bar.slim {
+  height: 16px;
+  border-radius: 0;
+}
+
+.outcome-strip-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.outcome-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.outcome-strip-item .key-rect {
+  width: 9px;
+  height: 9px;
+  border-radius: 0;
+}
+
+.outcome-strip-item b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Time saved bars ──────────────────────────────────────────────────── */
+
+.tsb-summary {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 6px 0 16px;
+}
+
+.tsb-summary b {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.tsb-summary-saved {
+  margin-top: 4px;
+  color: var(--delta-good);
+}
+
+.tsb-summary-saved b {
+  color: var(--delta-good);
+}
+
+.tsb-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.tsb-name {
+  grid-column: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.tsb-saved {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--delta-good);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tsb-bars {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.tsb-bar-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.tsb-bar-label {
+  width: 86px;
+  flex-shrink: 0;
+}
+
+.tsb-track {
+  flex: 1;
+  height: 9px;
+  background: var(--grid);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.tsb-fill {
+  display: block;
+  height: 100%;
+  border-radius: 0;
+}
+
+.tsb-value {
+  width: 72px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+/* ── Activity heatmap ─────────────────────────────────────────────────── */
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 28px repeat(24, 1fr);
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.heatmap-hour,
+.heatmap-day {
+  font-size: 9.5px;
+  color: var(--ink-3);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap-day {
+  text-align: right;
+  padding-right: 5px;
+  line-height: 16px;
+}
+
+.heatmap-cell {
+  height: 16px;
+  border-radius: 0;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.heatmap-swatch {
+  width: 20px;
+  height: 9px;
+  border-radius: 0;
+}
+
+.heatmap-legend-max {
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+/* ── Responsibility ───────────────────────────────────────────────────── */
+
+.resp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1.5px 8px 1.5px 6px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.resp-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.resp-bar {
+  display: flex;
+  gap: 1px;
+  height: 26px;
+  margin: 8px 0 16px;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.resp-seg {
+  min-width: 3px;
+}
+
+.resp-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+}
+
+.resp-row:last-of-type {
+  border-bottom: none;
+}
+
+.resp-row .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.resp-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.resp-row b {
+  color: var(--ink);
+}
+
+.resp-count {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.resp-count b {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* Notes are set off by a brand rule on the leading edge rather than a tinted
+   box — a filled panel here competes with the data for attention. */
+
+.resp-note {
+  margin-top: 14px;
+  padding: 2px 0 2px 13px;
+  border-left: 2px solid var(--rule-2);
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* ── Colour legend ────────────────────────────────────────────────────── */
+
+.legend-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px 28px;
+  margin-top: 10px;
+}
+
+.legend-group-title {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding-bottom: 7px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.legend-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 4px 0;
+  font-size: 12.5px;
+}
+
+.legend-entry .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.legend-entry b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.legend-entry .dim {
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.legend-note {
+  margin-top: 18px;
+  padding: 2px 0 2px 13px;
+  border-left: 2px solid var(--rule-2);
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+
+.legend-note b {
+  color: var(--ink);
+}
+
+/* ── Mobile (≤ 700px) ── */
+@media (max-width: 700px) {
+  .lede-eyebrow,
+    .stake-headline {
+      margin-top: var(--s5);
+    }
+
+  .stake-headline {
+      gap: 10px;
+    }
+
+  .stake-headline .health-dot {
+      margin-top: 10px;
+    }
+
+  .stake-headline-text {
+      max-width: none;
+    }
+
+  .stake-section-head {
+      margin: var(--s8) 0 var(--s3);
+    }
+
+  .stake-section-title {
+      font-size: 20px;
+    }
+
+  .stake-controls {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+    }
+
+  .outcome-strip-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+  .outcome-strip-legend {
+      gap: 6px 16px;
+    }
+
+  .automation-table [data-col='kind'],
+    .automation-table [data-col='runtime'],
+    .automation-table [data-col='avg'],
+    .automation-table [data-col='owner'],
+    .automation-table [data-col='trend'],
+    .automation-table [data-col='last'] {
+      display: none;
+    }
+
+  .automation-table .tbl-metric .minibar {
+      display: none;
+    }
+
+  .resp-count b {
+      font-size: 17px;
+    }
+
+  .heatmap-grid {
+      grid-template-columns: 22px repeat(24, 1fr);
+      gap: 1px;
+    }
+
+  .heatmap-cell {
+      height: 12px;
+    }
+
+  .heatmap-day {
+      line-height: 12px;
+      font-size: 8.5px;
+      padding-right: 3px;
+    }
+
+  .heatmap-hour {
+      font-size: 8.5px;
+    }
+
+  .heatmap-legend {
+      flex-wrap: wrap;
+    }
+
+  .heatmap-legend-max {
+      flex: 1 1 100%;
+      margin-left: 0;
+    }
+
+  .tsb-bar-label {
+      width: 68px;
+    }
+
+  .tsb-value {
+      width: 58px;
+    }
+
+  .automation-table table.tbl {
+      table-layout: fixed;
+      width: 100%;
+    }
+
+  .automation-table th,
+    .automation-table td {
+      white-space: normal;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+  .automation-table [data-col='name'] {
+      width: 38%;
+    }
+
+  .automation-table [data-col='status'] {
+      width: 26%;
+    }
+
+  .automation-table [data-col='volume'] {
+      width: 15%;
+    }
+
+  .automation-table [data-col='quality'] {
+      width: 21%;
+    }
+
+  .automation-table .primary {
+      overflow-wrap: anywhere;
+    }
+
+  .automation-table .tbl-status {
+      white-space: normal;
+      align-items: flex-start;
+    }
+
+  .automation-table .tbl-status .health-dot {
+      margin-top: 5px;
+    }
+
+  .automation-table .tbl-metric {
+      font-size: 12.5px;
+    }
+
+  .automation-table th {
+      font-size: 10.5px;
+      letter-spacing: 0.03em;
+    }
+
+  .automation-table [data-col='name'] {
+      width: 34%;
+    }
+
+  .automation-table [data-col='volume'] {
+      width: 18%;
+    }
+
+  .automation-table [data-col='quality'] {
+      width: 22%;
+    }
+
+  .automation-table .primary {
+      hyphens: auto;
+    }
+}

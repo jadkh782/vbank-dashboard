@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { MiniBar } from './Badges'
-import { deInt, dePct } from '../../lib/health'
+import { deInt, dePct } from '@vbank/shared'
 
 export interface RankItem {
   label: string

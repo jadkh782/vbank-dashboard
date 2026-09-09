@@ -1,0 +1,127 @@
+/* Design tokens ("Azure Clarity"): colour scale, type scale, spacing, rules. Both apps load this first. */
+
+/* ── Exelentic – Vbank · Azure Clarity design tokens ──────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* Planes — tonal layers. A cool slate canvas holds white cards that lift
+     by a ghost border first and a very soft ambient shadow second. */
+  --page: #f8fafc;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunk: #f1f5f9;
+
+  /* Ink — a slate grayscale. Every step that carries text clears 4.5:1 on
+     --page and on --surface. Hierarchy is made with weight, size and case,
+     not with pale greys. --ink-faint is the only decorative step and must
+     never be used for text. */
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --ink-3: #475569;
+  --ink-4: #64748b;
+  --ink-faint: #94a3b8;
+
+  /* Chrome */
+  --grid: #e2e8f0;
+  --baseline: #cbd5e1;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Rules — ghost borders carry the structure; the heavy rule opens a
+     section and the brand rule caps the page. */
+  --rule: #f1f5f9;
+  --rule-2: #e2e8f0;
+  --rule-strong: #cbd5e1;
+
+  /* Brand — a precise blue accent on a neutral foundation. */
+  --brand: #3b82f6;
+  --brand-2: #2563eb; /* hover / pressed */
+  --brand-ink: #ffffff; /* text on brand fills */
+  --brand-wash: #eff6ff;
+  --accent: #3b82f6;
+  --accent-wash: #eff6ff;
+
+  /* Job / transaction state colors (status palette — fixed) */
+  --state-successful: #16a34a;
+  --state-faulted: #dc2626;
+  --state-stopped: #f97316;
+  --state-running: #3b82f6;
+  --state-pending: #94a3b8;
+  --state-suspended: #7c3aed;
+  --state-warning: #d97706;
+
+  --delta-good: #15803d;
+  --delta-bad: #dc2626;
+
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-pop: 0 10px 15px rgba(15, 23, 42, 0.12), 0 4px 6px rgba(15, 23, 42, 0.05);
+
+  /* Type — Inter throughout, engineered for screen legibility. */
+  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font);
+
+  /* Type scale */
+  --t-display: 32px; /* headline-lg */
+  --t-kpi: 34px; /* hero numerals */
+  --t-title: 16px; /* card + section titles */
+  --t-body: 14px;
+  --t-micro: 12px;
+  --t-eyebrow: 12px; /* label-sm */
+  --track-eyebrow: 0.05em;
+  --track-display: -0.02em;
+
+  /* Shape — soft, on a 4px base radius */
+  --r-sm: 4px; /* buttons, inputs, checkboxes */
+  --r-md: 6px;
+  --r-lg: 8px; /* cards, modals, banners */
+  --r-xl: 12px; /* feature sections */
+  --r-full: 9999px; /* tags, status pills */
+
+  /* Spacing rhythm */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 68px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0b1120;
+  --surface: #131c2e;
+  --surface-raised: #1a2437;
+  --surface-sunk: #0f1728;
+  --ink: #f1f5f9;
+  --ink-2: #cbd5e1;
+  --ink-3: #b0bccd;
+  --ink-4: #94a3b8;
+  --ink-faint: #64748b;
+  --grid: #263145;
+  --baseline: #3a465c;
+  --border: #263145;
+  --border-strong: #3a465c;
+  --rule: #1e293b;
+  --rule-2: #293548;
+  --rule-strong: #47536a;
+  --brand: #60a5fa;
+  --brand-2: #93c5fd;
+  --brand-ink: #0b1120;
+  --brand-wash: rgba(96, 165, 250, 0.12);
+  --accent: #60a5fa;
+  --accent-wash: rgba(96, 165, 250, 0.12);
+  --state-successful: #22c55e;
+  --state-faulted: #f04444;
+  --state-stopped: #fb923c;
+  --state-running: #60a5fa;
+  --state-pending: #8592a6;
+  --state-suspended: #a78bfa;
+  --state-warning: #f59e0b;
+  --delta-good: #22c55e;
+  --delta-bad: #f04444;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.35);
+}

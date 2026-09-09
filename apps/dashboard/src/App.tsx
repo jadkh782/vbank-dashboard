@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ThemeContext, type ThemeMode } from './theme'
+import { ThemeContext, type ThemeMode } from '@vbank/ui'
 import { FilterProvider, useFilters } from './state/FilterContext'
 import { getAuthConfig } from './api/auth'
 import { isDemoMode } from './api/demo'

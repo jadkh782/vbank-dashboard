@@ -1,7 +1,7 @@
 import type { AppSettings } from '../../api/store'
-import type { ErrorGroup } from '../../lib/errors'
-import { deInt, friendlyName, SOURCE_LABELS_DE } from '../../lib/health'
-import { useChartTheme } from '../../theme'
+import type { ErrorGroup } from '@vbank/shared'
+import { deInt, friendlyName, SOURCE_LABELS_DE } from '@vbank/shared'
+import { useChartTheme } from '@vbank/ui'
 import { ResponsibilityBadge } from './Responsibility'
 
 export function IssueList({

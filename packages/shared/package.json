@@ -1,0 +1,17 @@
+{
+  "name": "@vbank/shared",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Pure TypeScript shared by dashboard, control board and ingest: types, categories, aggregates, classification",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "date-fns": "^3.6.0"
+  }
+}

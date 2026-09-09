@@ -1,5 +1,5 @@
 import { authHeaders } from './auth'
-import type { ODataResponse } from './types'
+import type { ODataResponse } from '@vbank/shared'
 
 export class OrchestratorError extends Error {
   status: number

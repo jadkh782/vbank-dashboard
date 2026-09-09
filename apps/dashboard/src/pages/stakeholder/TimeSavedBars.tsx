@@ -1,7 +1,7 @@
-import type { TimeSavedRow } from '../../lib/aggregate'
+import type { TimeSavedRow } from '@vbank/shared'
 import type { AppSettings } from '../../api/store'
-import { deHours, dePct, dePT, friendlyName } from '../../lib/health'
-import { useChartTheme } from '../../theme'
+import { deHours, dePct, dePT, friendlyName } from '@vbank/shared'
+import { useChartTheme } from '@vbank/ui'
 
 /**
  * Human vs. bot processing time. Emphasis encoding rather than two categorical

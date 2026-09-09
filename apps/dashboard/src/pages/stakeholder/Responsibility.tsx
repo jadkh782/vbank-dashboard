@@ -1,4 +1,4 @@
-import type { Responsibility } from '../../lib/errors'
+import type { Responsibility } from '@vbank/shared'
 import {
   deInt,
   dePct,
@@ -6,8 +6,8 @@ import {
   RESPONSIBILITY_HINTS,
   RESPONSIBILITY_LABELS,
   RESPONSIBILITY_ORDER,
-} from '../../lib/health'
-import { useThemeMode } from '../../theme'
+} from '@vbank/shared'
+import { useThemeMode } from '@vbank/ui'
 
 export function useResponsibilityColors() {
   const { mode } = useThemeMode()

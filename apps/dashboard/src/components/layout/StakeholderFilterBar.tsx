@@ -1,6 +1,6 @@
 import { useFilters, type PresetKey } from '../../state/FilterContext'
-import { toInputValue } from '../../lib/dates'
-import type { OrchFolder } from '../../api/types'
+import { toInputValue } from '@vbank/shared'
+import type { OrchFolder } from '@vbank/shared'
 
 const PRESETS: { key: Exclude<PresetKey, 'custom'>; label: string }[] = [
   { key: 'today', label: 'Heute' },

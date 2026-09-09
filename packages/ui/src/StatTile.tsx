@@ -1,5 +1,5 @@
-import { Sparkline } from '../charts/ChartKit'
-import { fmtDelta } from '../../lib/format'
+import { Sparkline } from './ChartKit'
+import { fmtDelta } from '@vbank/shared'
 
 export function StatTile({
   label,

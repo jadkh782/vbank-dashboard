@@ -1,8 +1,8 @@
 // Health scoring, friendly naming and German plain-language helpers for the
 // stakeholder view. Pure presentation logic on top of the existing aggregates.
 
-import type { AppSettings, ManualError } from '../api/store'
-import type { OrchJob, OrchQueueItem, TenantData } from '../api/types'
+import type { AppSettings, ManualError } from './settings'
+import type { OrchJob, OrchQueueItem, TenantData } from './orchestrator.types'
 import type { ErrorGroup, ErrorSource, Responsibility } from './errors'
 import type { ScorecardRow } from './aggregate'
 import { buildBuckets, bucketIndexOf, type Bucket } from './dates'

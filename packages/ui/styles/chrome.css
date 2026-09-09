@@ -1,0 +1,329 @@
+/* App frame shared by both apps: masthead, nav tabs (control board), filter bar. */
+
+/* ── App frame ────────────────────────────────────────────────────────── */
+
+.app {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 32px 72px;
+}
+
+/* The page opens on a heavy brand rule, aligned to the content measure —
+   the board-pack convention that says "this is a document, not a screen". */
+
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 0 15px;
+  border-top: 3px solid var(--brand);
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.masthead-left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+/* The slash is structural, not decorative — hold it back from the wordmark. */
+
+.wordmark span {
+  color: var(--ink-4);
+  font-weight: 500;
+}
+
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.masthead-title b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.masthead-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--state-successful);
+}
+
+.live-dot.paused {
+  background: var(--ink-3);
+}
+
+.theme-toggle {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+
+/* ── Nav tabs ─────────────────────────────────────────────────────────── */
+
+/* Tabs read as a row of quiet pills; the selected one takes the blue tint
+   wash and blue label, the same signal the rest of the system uses for
+   "you are here". */
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.nav button {
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink-3);
+  border-radius: var(--r-md);
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.nav button:hover {
+  color: var(--ink);
+  background: var(--surface-sunk);
+}
+
+.nav button.active {
+  color: var(--accent);
+  background: var(--accent-wash);
+  font-weight: 600;
+}
+
+/* ── Filter bar ───────────────────────────────────────────────────────── */
+
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-right: 2px;
+}
+
+.seg {
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.seg button {
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  border-right: 1px solid var(--rule-2);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.seg button:last-child {
+  border-right: none;
+}
+
+.seg button:hover {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.seg button.active {
+  background: var(--accent);
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+/* Tags take the pill shape; selected ones the blue tint wash. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-full);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.chip:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+}
+
+.chip.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+  background: var(--accent-wash);
+}
+
+.chip.off {
+  opacity: 0.5;
+}
+
+.chip .swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+}
+
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.range-inputs input {
+  width: 168px;
+}
+
+/* ── Mobile (≤ 700px) ── */
+@media (max-width: 700px) {
+  .app {
+      padding: 0 16px 40px;
+    }
+
+  .masthead {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      padding: 16px 0 12px;
+    }
+
+  .masthead-left {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+  .masthead-title {
+      white-space: normal;
+      font-size: 15px;
+    }
+
+  .masthead-right {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+  .masthead-right > span:not(.live-dot) {
+      flex: 1 1 100%;
+    }
+
+  .theme-toggle,
+    .seg button,
+    .chip,
+    .nav button {
+      min-height: 36px;
+    }
+
+  .nav {
+      flex-wrap: nowrap;
+      gap: 2px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+  .nav button {
+      white-space: nowrap;
+    }
+
+  .filterbar {
+      gap: 10px 16px;
+      padding: 12px 0;
+    }
+
+  .filter-group {
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+  .filter-group select {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+  .range-inputs {
+      flex: 1 1 100%;
+      flex-wrap: wrap;
+    }
+
+  .range-inputs input {
+      flex: 1 1 130px;
+      width: auto;
+      min-width: 0;
+    }
+}

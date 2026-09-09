@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeMessage } from '../lib/errors'
+import { normalizeMessage } from '../src/errors'
 
 describe('workspace wiring', () => {
   it('runs a test against the moved source tree', () => {

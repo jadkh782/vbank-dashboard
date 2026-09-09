@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useChartTheme } from '../../theme'
-import { fmtInt } from '../../lib/format'
+import { useChartTheme } from './theme'
+import { fmtInt } from '@vbank/shared'
 
 export interface Series {
   key: string

@@ -1,5 +1,5 @@
-import type { OrchJob, OrchQueueItem } from '../api/types'
-import type { ManualError } from '../api/store'
+import type { OrchJob, OrchQueueItem } from './orchestrator.types'
+import type { ManualError } from './settings'
 
 export type ErrorSource =
   | 'Job fault'

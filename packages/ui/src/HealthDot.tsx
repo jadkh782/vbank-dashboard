@@ -1,4 +1,4 @@
-import type { Health } from '../../lib/health'
+import type { Health } from '@vbank/shared'
 
 export const HEALTH_COLORS: Record<Health, string> = {
   ok: '#0ca30c',

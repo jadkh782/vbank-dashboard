@@ -1,0 +1,22 @@
+{
+  "name": "@vbank/ui",
+  "private": true,
+  "version": "2.0.0",
+  "description": "React primitives and the design-system CSS shared by dashboard and control board",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles/*": "./styles/*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@vbank/shared": "*"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7"
+  }
+}

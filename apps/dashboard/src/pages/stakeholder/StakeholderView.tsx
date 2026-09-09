@@ -9,8 +9,8 @@ import {
   queueVolumeOverTime,
   scorecard,
   timeSaved,
-} from '../../lib/aggregate'
-import { collectErrors, groupErrors } from '../../lib/errors'
+} from '@vbank/shared'
+import { collectErrors, groupErrors } from '@vbank/shared'
 import {
   buildStakeholderCards,
   deDateTime,
@@ -22,11 +22,11 @@ import {
   overallHealth,
   queueIdsByName,
   type StakeholderCard,
-} from '../../lib/health'
-import { StatTile } from '../../components/ui/StatTile'
-import { ChartCard, StackedBarsChart } from '../../components/charts/ChartKit'
-import { useThemeMode } from '../../theme'
-import { HealthDot } from './Health'
+} from '@vbank/shared'
+import { StatTile } from '@vbank/ui'
+import { ChartCard, StackedBarsChart } from '@vbank/ui'
+import { useThemeMode } from '@vbank/ui'
+import { HealthDot } from '@vbank/ui'
 import { AutomationTable } from './AutomationTable'
 import { OutcomeStrip } from './OutcomeStrip'
 import { DetailPanel } from './DetailPanel'

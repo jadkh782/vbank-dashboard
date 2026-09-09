@@ -7,7 +7,7 @@ import type {
   OrchQueueDefinition,
   OrchQueueItem,
   TenantData,
-} from './types'
+} from '@vbank/shared'
 
 export async function fetchFolders(): Promise<OrchFolder[]> {
   const res = await fetchAllPages<OrchFolder>('odata/Folders?$orderby=FullyQualifiedName')

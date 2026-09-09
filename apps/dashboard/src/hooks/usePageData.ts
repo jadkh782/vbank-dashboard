@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { useTenantData } from './useOrchestrator'
 import { useFilters } from '../state/FilterContext'
-import { inWindow, previousWindow } from '../lib/aggregate'
+import { inWindow, previousWindow } from '@vbank/shared'
 import { DEFAULT_SETTINGS, useManualErrors, useSettings, type AppSettings, type ManualError } from '../api/store'
-import type { OrchJob, OrchQueueItem } from '../api/types'
+import type { OrchJob, OrchQueueItem } from '@vbank/shared'
 
 export interface PageData {
   /** Jobs in the selected window. */

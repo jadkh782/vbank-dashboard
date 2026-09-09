@@ -14,7 +14,7 @@ import type {
   OrchQueueDefinition,
   OrchQueueItem,
   TenantData,
-} from './types'
+} from '@vbank/shared'
 
 /**
  * `?demo` forces demo data; `?live` forces the real connection. Without either,

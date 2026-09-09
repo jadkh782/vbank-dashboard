@@ -1,0 +1,106 @@
+/* Print / PDF board pack. */
+
+/* ── Print / PDF (board pack) ─────────────────────────────────────────── */
+
+.print-period {
+  display: none;
+}
+
+@media print {
+  :root,
+    :root[data-theme='dark'] {
+      color-scheme: light;
+      --page: #ffffff;
+      --surface: #ffffff;
+      --surface-raised: #ffffff;
+      --ink: #000000;
+      --ink-2: #333333;
+      --ink-3: #4d4d4d;
+      --ink-4: #595959;
+      --ink-faint: #8a8a8a;
+      --grid: #dddddd;
+      --border: #cccccc;
+      --border-strong: #999999;
+      /* Solid greys, not alpha — a 9%-opacity hairline drops out on most
+         office printers, taking the whole ruled structure with it. */
+      --rule: #d4d4d4;
+      --rule-2: #a8a8a8;
+      --rule-strong: #4d4d4d;
+      --brand-wash: transparent;
+      --accent-wash: transparent;
+      --shadow-card: none;
+      --shadow-pop: none;
+    }
+
+  body {
+      background: #ffffff;
+    }
+
+  .app {
+      max-width: none;
+      padding: 0;
+    }
+
+  .masthead-right,
+    .nav,
+    .filterbar,
+    .stake-controls,
+    .panel-backdrop,
+    .detail-panel,
+    .strip-tip,
+    button {
+      display: none !important;
+    }
+
+  .print-period {
+      display: block;
+      margin: 10px 0 4px;
+      font-size: 11pt;
+      color: #333333;
+    }
+
+  .card,
+    .stake-headline,
+    .kpi-row,
+    .outcome-strip,
+    section {
+      break-inside: avoid;
+      box-shadow: none;
+    }
+
+  /* A section title stranded at the foot of a page is the classic board-pack
+       printing failure — keep every heading with the material it introduces. */
+
+  .stake-section-head,
+    .lede-eyebrow,
+    .card-head {
+      break-after: avoid;
+      break-inside: avoid;
+    }
+
+  .grid.two-col,
+    .grid.main-side {
+      grid-template-columns: 1fr 1fr;
+    }
+
+  a[href]::after {
+      content: '';
+    }
+}
+
+/* Colophon. Closed by the same heavy rule that opened the page. */
+
+.footer {
+  margin-top: var(--s8);
+  padding-top: 14px;
+  border-top: 1.5px solid var(--rule-strong);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  justify-content: space-between;
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}

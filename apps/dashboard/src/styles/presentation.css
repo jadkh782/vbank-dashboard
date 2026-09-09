@@ -1,0 +1,55 @@
+/* Presentation mode: scales the type tokens for meeting-room screens. */
+
+/* ── Presentation mode ────────────────────────────────────────────────── */
+
+:root[data-presentation='true'] body {
+  font-size: 16px;
+}
+
+:root[data-presentation='true'] .app {
+  max-width: 1800px;
+  padding: 0 44px 44px;
+}
+
+:root[data-presentation='true'] .theme-toggle,
+:root[data-presentation='true'] .range-inputs,
+:root[data-presentation='true'] .stake-controls,
+:root[data-presentation='true'] .footer {
+  display: none;
+}
+
+/* Presentation mode scales the type system itself rather than patching
+   individual rules, so the editorial proportions survive the jump to a
+   meeting-room screen. */
+
+:root[data-presentation='true'] {
+  --t-display: 44px;
+  --t-title: 21px;
+  --t-micro: 14px;
+  --t-eyebrow: 12px;
+}
+
+:root[data-presentation='true'] .stake-headline-sub {
+  font-size: 15px;
+}
+
+:root[data-presentation='true'] .tile-value {
+  font-size: clamp(42px, 3.4vw, 60px);
+}
+
+:root[data-presentation='true'] .stake-section-title {
+  font-size: 30px;
+}
+
+:root[data-presentation='true'] .tbl {
+  font-size: 15px;
+}
+
+/* ── Mobile (≤ 700px) ── */
+@media (max-width: 700px) {
+  .footer {
+      margin-top: var(--s8);
+      flex-direction: column;
+      gap: 4px;
+    }
+}

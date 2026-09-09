@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import type { AppSettings, ManualError } from '../../api/store'
-import type { OrchJob, OrchQueueItem } from '../../api/types'
-import type { ErrorGroup } from '../../lib/errors'
-import type { StakeholderCard, StripCell } from '../../lib/health'
+import type { OrchJob, OrchQueueItem } from '@vbank/shared'
+import type { ErrorGroup } from '@vbank/shared'
+import type { StakeholderCard, StripCell } from '@vbank/shared'
 import {
   deDateTime,
   deHours,
@@ -11,11 +11,11 @@ import {
   HEALTH_LABELS_DE,
   jobsForCard,
   queueItemsForCard,
-} from '../../lib/health'
-import { fmtDuration } from '../../lib/format'
-import { StackedBarsChart } from '../../components/charts/ChartKit'
-import { useChartTheme } from '../../theme'
-import { HealthDot } from './Health'
+} from '@vbank/shared'
+import { fmtDuration } from '@vbank/shared'
+import { StackedBarsChart } from '@vbank/ui'
+import { useChartTheme } from '@vbank/ui'
+import { HealthDot } from '@vbank/ui'
 import { ResponsibilityBadge } from './Responsibility'
 import { StatusStrip } from './StatusStrip'
 import { IssueList } from './IssueList'

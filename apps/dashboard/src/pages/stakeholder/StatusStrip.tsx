@@ -1,5 +1,5 @@
-import type { StripCell } from '../../lib/health'
-import { deDateTime, deInt, dePct } from '../../lib/health'
+import type { StripCell } from '@vbank/shared'
+import { deDateTime, deInt, dePct } from '@vbank/shared'
 
 const STRIP_COLORS: Record<StripCell['health'], string> = {
   ok: '#0ca30c',

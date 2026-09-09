@@ -1,4 +1,4 @@
-import { useThemeMode } from '../../theme'
+import { useThemeMode } from '@vbank/ui'
 
 export function Header({
   lastUpdated,

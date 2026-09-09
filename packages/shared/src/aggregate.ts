@@ -1,5 +1,5 @@
-import type { OrchJob, OrchQueueItem, TenantData } from '../api/types'
-import type { AppSettings, ManualError } from '../api/store'
+import type { OrchJob, OrchQueueItem, TenantData } from './orchestrator.types'
+import type { AppSettings, ManualError } from './settings'
 import { classifyAppEx } from './errors'
 import { buildBuckets, bucketIndexOf } from './dates'
 

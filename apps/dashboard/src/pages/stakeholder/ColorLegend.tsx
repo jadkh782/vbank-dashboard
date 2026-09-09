@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { RESPONSIBILITY_HINTS, RESPONSIBILITY_LABELS, RESPONSIBILITY_ORDER } from '../../lib/health'
+import { RESPONSIBILITY_HINTS, RESPONSIBILITY_LABELS, RESPONSIBILITY_ORDER } from '@vbank/shared'
 import { useResponsibilityColors } from './Responsibility'
-import { HEALTH_COLORS } from './Health'
+import { HEALTH_COLORS } from '@vbank/ui'
 
 /**
  * Colour key for the whole stakeholder view.

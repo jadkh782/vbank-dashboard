@@ -1,4 +1,4 @@
-import { deInt, dePct } from '../../lib/health'
+import { deInt, dePct } from '@vbank/shared'
 
 export interface OutcomeSlice {
   label: string
