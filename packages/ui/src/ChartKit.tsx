@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { useChartTheme } from './theme'
-import { fmtInt } from '@vbank/shared'
+import { deInt } from '@vbank/shared'
 
 export interface Series {
   key: string
@@ -40,7 +40,7 @@ function VizTip({
   valueFmt?: (v: number) => string
 }) {
   if (!active || !payload || payload.length === 0) return null
-  const fmt = valueFmt ?? ((v: number) => fmtInt(v))
+  const fmt = valueFmt ?? ((v: number) => deInt(v))
   return (
     <div className="viz-tip">
       <div className="tip-title">{label}</div>
@@ -102,7 +102,7 @@ export function StackedBarsChart({
             tickLine={false}
             axisLine={false}
             allowDecimals={false}
-            tickFormatter={(v: number) => fmtInt(v)}
+            tickFormatter={(v: number) => deInt(v)}
           />
           <Tooltip
             cursor={{ fill: t.grid, opacity: 0.45 }}

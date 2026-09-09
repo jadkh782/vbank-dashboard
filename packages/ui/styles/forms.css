@@ -98,3 +98,61 @@ textarea:focus-visible {
 .settings-row input[type='number'] {
   width: 90px;
 }
+
+/* ── Login ─────────────────────────────────────────────────────────────── */
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(400px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 32px 28px 28px;
+  background: var(--surface);
+  border-top: 3px solid var(--brand-navy, var(--brand));
+  border-bottom: 1px solid var(--rule);
+}
+
+.login-title {
+  margin: 8px 0 0;
+  font-family: 'Source Serif 4 Variable', Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.login-sub {
+  margin: -8px 0 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  padding: 8px 10px;
+}
+
+.login-card .btn-primary {
+  margin-top: 6px;
+  align-self: stretch;
+}

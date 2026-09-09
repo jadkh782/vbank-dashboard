@@ -1,134 +1,100 @@
 import { useMemo, useState } from 'react'
-import { usePageData } from '../../hooks/usePageData'
-import { useTenantData } from '../../hooks/useOrchestrator'
-import { useFilters } from '../../state/FilterContext'
 import {
   activityMatrix,
-  jobKpis,
-  queueKpis,
-  queueVolumeOverTime,
-  scorecard,
-  timeSaved,
-} from '@vbank/shared'
-import { collectErrors, groupErrors } from '@vbank/shared'
-import {
   buildStakeholderCards,
+  categoryCounts,
   deDateTime,
   deHours,
   deInt,
   dePct,
   dePT,
+  groupIssues,
   healthStrip,
+  openPoints,
   overallHealth,
-  queueIdsByName,
+  runKpis,
+  scorecard,
+  timeSaved,
+  txnKpis,
+  volumeOverTime,
   type StakeholderCard,
 } from '@vbank/shared'
-import { StatTile } from '@vbank/ui'
-import { ChartCard, StackedBarsChart } from '@vbank/ui'
-import { useThemeMode } from '@vbank/ui'
-import { HealthDot } from '@vbank/ui'
+import { ChartCard, HealthDot, StackedBarsChart, StatTile, useChartTheme } from '@vbank/ui'
+import { useWindowData } from '../../data/useDashboardData'
+import { useWindow } from '../../state/WindowContext'
 import { AutomationTable } from './AutomationTable'
 import { OutcomeStrip } from './OutcomeStrip'
 import { DetailPanel } from './DetailPanel'
 import { TimeSavedBars } from './TimeSavedBars'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { IssueList } from './IssueList'
-import { ResponsibilitySplit } from './Responsibility'
+import { CategorySplit } from './CategorySplit'
 import { ColorLegend } from './ColorLegend'
 
 type CardFilter = 'alle' | 'auffaellig'
 
-/**
- * Outcome palette for the stakeholder view. The order Erfolgreich → Aussteuerung
- * → Nicht erfolgreich → Prozessfehler is the one the colour-vision validator
- * clears in both themes (green must not neighbour a warm hue; violet must not
- * neighbour blue), so keep these adjacent positions if you edit it.
- */
-export function useOutcomeColors() {
-  const { mode } = useThemeMode()
-  return mode === 'dark'
-    ? {
-        erfolgreich: '#22c55e',
-        aussteuerung: '#60a5fa',
-        nichtErfolgreich: '#f59e0b',
-        prozessfehler: '#a78bfa',
-      }
-    : {
-        erfolgreich: '#16a34a',
-        aussteuerung: '#3b82f6',
-        nichtErfolgreich: '#d97706',
-        prozessfehler: '#7c3aed',
-      }
-}
-
 export function StakeholderView() {
-  const { data, isFetching } = useTenantData()
-  const { page, settings } = usePageData()
-  const { from, to } = useFilters()
-  const OUTCOME_COLORS = useOutcomeColors()
-
+  const { from, to, folder } = useWindow()
+  const { data, isLoading, isFetching, error } = useWindowData(from, to)
+  const t = useChartTheme()
   const [cardFilter, setCardFilter] = useState<CardFilter>('alle')
   const [selected, setSelected] = useState<StakeholderCard | null>(null)
 
-  const idsByName = useMemo(() => (data ? queueIdsByName(data) : new Map()), [data])
+  // Bereich filter: restrict the automations, then every row follows.
+  const scoped = useMemo(() => {
+    if (!data) return null
+    const automations = folder === 'all' ? data.automations : data.automations.filter((a) => a.folder === folder)
+    const ids = new Set(automations.map((a) => a.id))
+    const keep = <T extends { automationId: string | null }>(rows: T[]) =>
+      folder === 'all' ? rows : rows.filter((r) => r.automationId !== null && ids.has(r.automationId))
+    return {
+      automations,
+      runs: keep(data.runs),
+      runsPrev: keep(data.runsPrev),
+      txns: keep(data.txns),
+      txnsPrev: keep(data.txnsPrev),
+      manual: keep(data.manual),
+      manualPrev: keep(data.manualPrev),
+      settings: data.settings,
+    }
+  }, [data, folder])
 
-  if (!data || !page) return null
-  const { jobs, jobsPrev } = page
+  if (error) return <div className="error-banner">Datenabruf fehlgeschlagen: {error.message}</div>
+  if (isLoading || !scoped) {
+    return (
+      <div className="state-block" style={{ paddingTop: 90 }}>
+        <b>Daten werden geladen…</b>
+      </div>
+    )
+  }
 
-  const qk = queueKpis(page.queueItems)
-  const qkPrev = queueKpis(page.queueItemsPrev)
-  const jk = jobKpis(jobs)
-  const jkPrev = jobKpis(jobsPrev)
+  const { automations, runs, runsPrev, txns, txnsPrev, manual, manualPrev, settings } = scoped
+  const nameOf = (id: string) => automations.find((a) => a.id === id)?.displayName ?? id
 
-  const processed = qk.successful + qk.appExceptions + qk.bizExceptions
-  const processedPrev = qkPrev.successful + qkPrev.appExceptions + qkPrev.bizExceptions
-  // Correctly routed-out items count as correctly handled — same definition as
-  // the table rows and the status strips, so every figure agrees.
-  const successRate =
-    processed > 0 ? ((qk.successful + qk.bizExceptions) / processed) * 100 : jk.successRate
-  const successRatePrev =
-    processedPrev > 0
-      ? ((qkPrev.successful + qkPrev.bizExceptions) / processedPrev) * 100
-      : jkPrev.successRate
+  const qk = txnKpis(txns)
+  const qkPrev = txnKpis(txnsPrev)
+  const rk = runKpis(runs)
+  const rkPrev = runKpis(runsPrev)
 
-  const rows = scorecard(data, page.queueItems, page.manualErrors, settings)
-  const saved = timeSaved(rows, settings)
+  // Correctly handled = successful + correctly routed out + not counted as an error.
+  const successRate = qk.processed > 0 ? qk.successRate : rk.successRate
+  const successRatePrev = qkPrev.processed > 0 ? qkPrev.successRate : rkPrev.successRate
+
+  const rows = scorecard(automations, txns, manual)
+  const saved = timeSaved(rows, settings.hoursPerPT)
   const savedConfigured = saved.filter((s) => s.savedHours !== null)
   const totalSavedH = savedConfigured.reduce((a, s) => a + (s.savedHours ?? 0), 0)
   const hoursPerPT = settings.hoursPerPT > 0 ? settings.hoursPerPT : 8
 
-  const allOccurrences = collectErrors(
-    jobs,
-    page.queueItems,
-    page.queueNames,
-    page.manualErrors,
-    settings.systemKeywords,
-  )
-  const allOccurrencesPrev = collectErrors(
-    jobsPrev,
-    page.queueItemsPrev,
-    page.queueNames,
-    page.manualErrorsPrev,
-    settings.systemKeywords,
-  )
-  // Correctly routed-out items are a valid outcome, not a Störung.
-  const occurrences = allOccurrences.filter((o) => o.responsibility !== 'business')
-  const occurrencesPrev = allOccurrencesPrev.filter((o) => o.responsibility !== 'business')
-  const groups = groupErrors(occurrences)
+  const issues = openPoints(runs, txns, manual)
+  const issuesPrev = openPoints(runsPrev, txnsPrev, manualPrev)
+  const groups = groupIssues(issues)
+  const counts = categoryCounts(issues)
 
-  const responsibilityCounts = {
-    it: allOccurrences.filter((o) => o.responsibility === 'it').length,
-    automation: allOccurrences.filter((o) => o.responsibility === 'automation').length,
-    restartable: allOccurrences.filter((o) => o.responsibility === 'restartable').length,
-    business: allOccurrences.filter((o) => o.responsibility === 'business').length,
-  }
-
-  const allCards = buildStakeholderCards(data, jobs, rows, groups, page.manualErrors, settings)
+  const allCards = buildStakeholderCards(automations, runs, txns, groups, manual, settings.thresholds)
   const { health, affected } = overallHealth(allCards)
   const totalRuntime = allCards.reduce((a, c) => a + c.runtimeHours, 0)
-
-  const stripFor = (card: StakeholderCard) =>
-    healthStrip(card, jobs, page.queueItems, idsByName, from, to, settings.healthThresholds)
+  const stripFor = (card: StakeholderCard) => healthStrip(card, runs, txns, from, to, settings.thresholds)
 
   const okCount = allCards.length - affected.length
   // The headline always leads with what is working: "30 von 34 laufen
@@ -140,44 +106,24 @@ export function StakeholderView() {
       ? 'Alle Automatisierungen laufen normal.'
       : okCount === 0
         ? 'Alle Automatisierungen haben derzeit offene Punkte.'
-        : `${deInt(okCount)} von ${deInt(allCards.length)} Automatisierungen ${
-            okCount === 1 ? 'läuft' : 'laufen'
-          } störungsfrei.`
+        : `${deInt(okCount)} von ${deInt(allCards.length)} Automatisierungen ${okCount === 1 ? 'läuft' : 'laufen'} störungsfrei.`
 
-  const visibleCards =
-    cardFilter === 'auffaellig' ? allCards.filter((c) => c.health !== 'ok') : allCards
+  const visibleCards = cardFilter === 'auffaellig' ? allCards.filter((c) => c.health !== 'ok') : allCards
 
+  const failedNeustart = txns.filter((x) => x.outcome === 'failed' && x.category === 'neustartfaehig').length
   const outcomeSlices = [
-    { label: 'Erfolgreich', value: qk.successful, color: OUTCOME_COLORS.erfolgreich },
-    { label: 'Korrekt erkannte Aussteuerung', value: qk.bizExceptions, color: OUTCOME_COLORS.aussteuerung },
-    {
-      label: 'Nicht erfolgreich',
-      value: occurrences.filter((o) => o.source === 'App exception (system)').length,
-      color: OUTCOME_COLORS.nichtErfolgreich,
-    },
-    {
-      label: 'Neustartfähige Vorgänge',
-      value: occurrences.filter((o) => o.source === 'App exception (bot)').length,
-      color: OUTCOME_COLORS.prozessfehler,
-    },
+    { label: 'Erfolgreich', value: qk.success + qk.ignored, color: t.outcome.erfolgreich },
+    { label: 'Korrekt erkannte Aussteuerung', value: qk.businessExceptions, color: t.outcome.aussteuerung },
+    { label: 'Nicht erfolgreich', value: qk.failed - failedNeustart, color: t.outcome.nichtErfolgreich },
+    { label: 'Neustartfähige Vorgänge', value: failedNeustart, color: t.outcome.neustart },
   ]
 
-  const volume = queueVolumeOverTime(page.queueItems, from, to)
-  // A correctly recognised routing-out is a correct outcome, so the trend
-  // carries it inside the green band rather than as a colour of its own —
-  // the bar then reads directly as "how much went right that day".
-  const verlaufRows = volume.rows.map((r) => ({
-    label: r.label,
-    'Korrekt verarbeitet':
-      ((r['Successful'] as number) ?? 0) + ((r['Business exception'] as number) ?? 0),
-    'Nicht erfolgreich': (r['App exception'] as number) ?? 0,
-  }))
+  const volume = volumeOverTime(txns, from, to)
   const verlaufSeries = [
-    { key: 'Korrekt verarbeitet', color: OUTCOME_COLORS.erfolgreich },
-    { key: 'Nicht erfolgreich', color: OUTCOME_COLORS.nichtErfolgreich },
+    { key: 'Korrekt verarbeitet', color: t.outcome.erfolgreich },
+    { key: 'Nicht erfolgreich', color: t.outcome.nichtErfolgreich },
   ]
-
-  const matrix = activityMatrix(page.queueItems)
+  const matrix = activityMatrix(txns)
 
   return (
     <>
@@ -190,7 +136,7 @@ export function StakeholderView() {
         <div>
           <div className="stake-headline-text">{headline}</div>
           <div className="stake-headline-sub">
-            Zeitraum {deDateTime(from)} – {deDateTime(to)} · {deInt(processed)} Vorgänge bearbeitet ·{' '}
+            Zeitraum {deDateTime(from)} – {deDateTime(to)} · {deInt(qk.processed)} Vorgänge bearbeitet ·{' '}
             {deInt(allCards.length)} Automatisierungen im Einsatz
             {affected.length > 0 && ` · ${deInt(affected.length)} mit offenen Punkten`}
           </div>
@@ -201,9 +147,9 @@ export function StakeholderView() {
       <div className="grid kpi-row">
         <StatTile
           label="Bearbeitete Vorgänge"
-          value={deInt(processed)}
-          current={processed}
-          previous={processedPrev}
+          value={deInt(qk.processed)}
+          current={qk.processed}
+          previous={qkPrev.processed}
           compareLabel="ggü. Vorperiode"
           refetching={isFetching}
         />
@@ -225,9 +171,9 @@ export function StakeholderView() {
         <a className="tile-link" href="#stoerungen">
           <StatTile
             label="Offene Punkte"
-            value={deInt(occurrences.length)}
-            current={occurrences.length}
-            previous={occurrencesPrev.length}
+            value={deInt(issues.length)}
+            current={issues.length}
+            previous={issuesPrev.length}
             compareLabel="ggü. Vorperiode"
             upIsGood={false}
             refetching={isFetching}
@@ -236,22 +182,12 @@ export function StakeholderView() {
       </div>
 
       {/* 3 — distribution as one slim line, doubling as the chart's key */}
-      {/* Erfolgreich and Aussteuerung are both correct outcomes — the header
-          states their sum so the split below never reads as 88 % success. */}
-      <OutcomeStrip
-        slices={outcomeSlices}
-        title="Ergebnisverteilung"
-        correct={['Erfolgreich', 'Korrekt erkannte Aussteuerung']}
-      />
+      <OutcomeStrip slices={outcomeSlices} title="Ergebnisverteilung" correct={['Erfolgreich', 'Korrekt erkannte Aussteuerung']} />
 
       {/* 4 — the single hero chart */}
       <div className="grid">
-        <ChartCard
-          title="Verlauf"
-          sub={`bearbeitete Vorgänge pro ${volume.unit === 'hour' ? 'Stunde' : 'Tag'}`}
-          refetching={isFetching}
-        >
-          <StackedBarsChart data={verlaufRows} series={verlaufSeries} height={260} valueFmt={(v) => deInt(v)} />
+        <ChartCard title="Verlauf" sub={`bearbeitete Vorgänge pro ${volume.unit === 'hour' ? 'Stunde' : 'Tag'}`} refetching={isFetching}>
+          <StackedBarsChart data={volume.rows} series={verlaufSeries} height={260} valueFmt={(v) => deInt(v)} />
         </ChartCard>
       </div>
 
@@ -265,21 +201,13 @@ export function StakeholderView() {
         </div>
         <div className="stake-controls">
           <span className="card-sub">
-            {affected.length > 0
-              ? `${deInt(okCount)} von ${deInt(allCards.length)} ohne Auffälligkeiten`
-              : `${deInt(allCards.length)} Automatisierungen`}
+            {affected.length > 0 ? `${deInt(okCount)} von ${deInt(allCards.length)} ohne Auffälligkeiten` : `${deInt(allCards.length)} Automatisierungen`}
           </span>
           <div className="seg">
-            <button
-              className={cardFilter === 'alle' ? 'active' : undefined}
-              onClick={() => setCardFilter('alle')}
-            >
+            <button className={cardFilter === 'alle' ? 'active' : undefined} onClick={() => setCardFilter('alle')}>
               Alle
             </button>
-            <button
-              className={cardFilter === 'auffaellig' ? 'active' : undefined}
-              onClick={() => setCardFilter('auffaellig')}
-            >
+            <button className={cardFilter === 'auffaellig' ? 'active' : undefined} onClick={() => setCardFilter('auffaellig')}>
               Mit offenen Punkten
             </button>
           </div>
@@ -292,7 +220,7 @@ export function StakeholderView() {
         </div>
       </div>
 
-      {/* 6 — issues and who owns them, in one card */}
+      {/* 6 — open points and who owns them, in one card */}
       <div className="stake-section-head" id="stoerungen">
         <div>
           <span className="section-eyebrow">
@@ -302,21 +230,26 @@ export function StakeholderView() {
         </div>
         <div className="stake-controls">
           <span className="card-sub">
-            {deInt(occurrences.length)} {occurrences.length === 1 ? 'offener Punkt' : 'offene Punkte'} im
-            Zeitraum
+            {deInt(issues.length)} {issues.length === 1 ? 'offener Punkt' : 'offene Punkte'} im Zeitraum
           </span>
         </div>
       </div>
       <div className="grid">
         <div className="card">
           <div className={isFetching ? 'refetching' : undefined}>
-            <ResponsibilitySplit counts={responsibilityCounts} />
+            <CategorySplit counts={counts} businessExceptions={qk.businessExceptions} />
+            {qk.recovered > 0 ? (
+              <div className="cat-note">
+                <b>{deInt(qk.recovered)}</b> Vorgänge wurden nach einem Neustart erfolgreich abgeschlossen — sie zählen als korrekt
+                verarbeitet.
+              </div>
+            ) : null}
             {groups.length > 0 ? (
               <>
                 <div className="panel-section-title" style={{ marginTop: 22 }}>
                   Häufigste Ursachen
                 </div>
-                <IssueList groups={groups.slice(0, 5)} settings={settings} />
+                <IssueList groups={groups.slice(0, 5)} nameOf={nameOf} />
               </>
             ) : null}
           </div>
@@ -333,36 +266,28 @@ export function StakeholderView() {
         </div>
       </div>
       <div className="grid two-col">
-        <ChartCard
-          title="Zeitersparnis"
-          sub="manuelle Bearbeitung im Vergleich zur Automatisierung"
-          refetching={isFetching}
-        >
-          <TimeSavedBars rows={saved} settings={settings} />
+        <ChartCard title="Zeitersparnis" sub="manuelle Bearbeitung im Vergleich zur Automatisierung" refetching={isFetching}>
+          <TimeSavedBars rows={saved} hoursPerPT={hoursPerPT} />
         </ChartCard>
-        <ChartCard
-          title="Wann die Automatisierungen arbeiten"
-          sub="Vorgänge nach Wochentag und Uhrzeit"
-          refetching={isFetching}
-        >
+        <ChartCard title="Wann die Automatisierungen arbeiten" sub="Vorgänge nach Wochentag und Uhrzeit" refetching={isFetching}>
           <ActivityHeatmap matrix={matrix} />
         </ChartCard>
       </div>
 
       <div className="grid">
-        <ColorLegend outcomeColors={OUTCOME_COLORS} />
+        <ColorLegend />
       </div>
 
       {selected ? (
         <DetailPanel
           card={selected}
+          automation={automations.find((a) => a.id === selected.automationId)}
           strip={stripFor(selected)}
-          jobs={jobs}
-          queueItems={page.queueItems}
-          idsByName={idsByName}
-          errorGroups={groups}
-          manualErrors={page.manualErrors}
-          settings={settings}
+          runs={runs}
+          txns={txns}
+          issueGroups={groups}
+          manualErrors={manual}
+          nameOf={nameOf}
           onClose={() => setSelected(null)}
         />
       ) : null}

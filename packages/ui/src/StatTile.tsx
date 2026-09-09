@@ -1,5 +1,5 @@
 import { Sparkline } from './ChartKit'
-import { fmtDelta } from '@vbank/shared'
+import { deDelta } from '@vbank/shared'
 
 export function StatTile({
   label,
@@ -24,7 +24,7 @@ export function StatTile({
 }) {
   const delta =
     current !== undefined && previous !== undefined && isFinite(current) && isFinite(previous)
-      ? fmtDelta(current, previous)
+      ? deDelta(current, previous)
       : null
 
   const dirClass =
@@ -46,7 +46,7 @@ export function StatTile({
           <span className={`dir ${dirClass}`}>
             {delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '—'} {delta.text}
           </span>
-          <span>{compareLabel ?? 'vs. prior period'}</span>
+          <span>{compareLabel ?? 'ggü. Vorperiode'}</span>
         </div>
       ) : null}
       {trend && trend.length > 1 ? <Sparkline values={trend} /> : null}

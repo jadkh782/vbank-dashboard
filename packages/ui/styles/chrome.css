@@ -327,3 +327,10 @@
       min-width: 0;
     }
 }
+
+/* The one fact the masthead states about the data: how current it is. */
+.datenstand {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums lining-nums;
+}

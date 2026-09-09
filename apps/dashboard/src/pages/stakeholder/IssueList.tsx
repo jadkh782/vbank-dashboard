@@ -1,17 +1,14 @@
-import type { AppSettings } from '../../api/store'
-import type { ErrorGroup } from '@vbank/shared'
-import { deInt, friendlyName, SOURCE_LABELS_DE } from '@vbank/shared'
-import { useChartTheme } from '@vbank/ui'
-import { ResponsibilityBadge } from './Responsibility'
+import { deInt, ISSUE_KIND_LABELS_DE, type IssueGroup } from '@vbank/shared'
+import { CategoryBadge, useChartTheme } from '@vbank/ui'
 
 export function IssueList({
   groups,
-  settings,
+  nameOf,
   showProcesses = true,
   emptyText = 'Keine offenen Punkte im gewählten Zeitraum.',
 }: {
-  groups: ErrorGroup[]
-  settings: AppSettings
+  groups: IssueGroup[]
+  nameOf: (automationId: string) => string
   showProcesses?: boolean
   emptyText?: string
 }) {
@@ -20,32 +17,33 @@ export function IssueList({
 
   return (
     <div className="stake-issues">
-      {groups.map((g, i) => (
-        <div className="stake-issue-row" key={i}>
+      {groups.map((g) => (
+        <div className="stake-issue-row" key={g.key}>
           <span className="stake-issue-count">
-            <span className="dot" style={{ background: t.errorSource[g.source] }} />
+            <span className="dot" style={{ background: g.category ? t.category[g.category] : t.axisInk }} />
             {deInt(g.count)}×
           </span>
           <div>
             <div className="primary">
-              {SOURCE_LABELS_DE[g.source]}
-              {showProcesses ? (
+              {ISSUE_KIND_LABELS_DE[g.kind]}
+              {showProcesses && g.automationIds.length > 0 ? (
                 <>
                   {' bei '}
-                  {g.processes
-                    .slice(0, 2)
-                    .map((p) => friendlyName(p, settings))
-                    .join(', ')}
-                  {g.processes.length > 2 ? ` und ${g.processes.length - 2} weiteren` : ''}
+                  {g.automationIds.slice(0, 2).map(nameOf).join(', ')}
+                  {g.automationIds.length > 2 ? ` und ${g.automationIds.length - 2} weiteren` : ''}
                 </>
               ) : null}
             </div>
-            <div className="dim" style={{ overflowWrap: 'anywhere' }}>
-              {g.message}
-            </div>
-            <div style={{ marginTop: 4 }}>
-              <ResponsibilityBadge who={g.responsibility} />
-            </div>
+            {g.family ? (
+              <div className="dim" style={{ overflowWrap: 'anywhere' }}>
+                {g.family}
+              </div>
+            ) : null}
+            {g.category ? (
+              <div style={{ marginTop: 4 }}>
+                <CategoryBadge category={g.category} />
+              </div>
+            ) : null}
           </div>
         </div>
       ))}

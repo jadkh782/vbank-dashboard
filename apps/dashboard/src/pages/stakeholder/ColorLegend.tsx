@@ -1,28 +1,18 @@
 import { useState } from 'react'
-import { RESPONSIBILITY_HINTS, RESPONSIBILITY_LABELS, RESPONSIBILITY_ORDER } from '@vbank/shared'
-import { useResponsibilityColors } from './Responsibility'
-import { HEALTH_COLORS } from '@vbank/ui'
+import { CATEGORY_HINTS_DE, CATEGORY_LABELS_DE, CATEGORY_ORDER } from '@vbank/shared'
+import { useChartTheme } from '@vbank/ui'
 
 /**
  * Colour key for the whole stakeholder view.
  *
  * Two independent colour systems are in play and the legend keeps them apart:
- *  - the traffic light on process cards and timeline strips (how is it running)
- *  - outcome / responsibility (what happened and who owns it)
+ *  - the traffic light on rows and timeline strips (how is it running)
+ *  - outcome / category (what happened and who owns it)
  * Both use amber, so each is always shown with its word — the legend states
  * which system a colour belongs to rather than implying one global meaning.
  */
-export function ColorLegend({
-  outcomeColors,
-}: {
-  outcomeColors: {
-    erfolgreich: string
-    aussteuerung: string
-    nichtErfolgreich: string
-    prozessfehler: string
-  }
-}) {
-  const resp = useResponsibilityColors()
+export function ColorLegend() {
+  const t = useChartTheme()
   // Collapsed by default: a reference people look up, not something that
   // competes with the dashboard for attention.
   const [open, setOpen] = useState(false)
@@ -40,23 +30,23 @@ export function ColorLegend({
         <>
           <div className="legend-groups">
             <div className="legend-group">
-              <div className="legend-group-title">Status eines Prozesses</div>
+              <div className="legend-group-title">Status einer Automatisierung</div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: HEALTH_COLORS.ok }} />
+                <span className="dot" style={{ background: t.health.ok }} />
                 <span>
                   <b>läuft normal</b>
                   <div className="dim">arbeitet wie erwartet</div>
                 </span>
               </div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: HEALTH_COLORS.attention }} />
+                <span className="dot" style={{ background: t.health.attention }} />
                 <span>
                   <b>benötigt Aufmerksamkeit</b>
                   <div className="dim">läuft, aber mit auffälligen Fehlern</div>
                 </span>
               </div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: HEALTH_COLORS.critical }} />
+                <span className="dot" style={{ background: t.health.critical }} />
                 <span>
                   <b>gestört</b>
                   <div className="dim">viele Vorgänge scheitern</div>
@@ -74,43 +64,43 @@ export function ColorLegend({
             <div className="legend-group">
               <div className="legend-group-title">Ergebnis eines Vorgangs</div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: outcomeColors.erfolgreich }} />
+                <span className="dot" style={{ background: t.outcome.erfolgreich }} />
                 <span>
                   <b>Erfolgreich</b>
-                  <div className="dim">vollständig automatisch bearbeitet</div>
+                  <div className="dim">vollständig automatisch bearbeitet — auch nach einem Neustart</div>
                 </span>
               </div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: outcomeColors.aussteuerung }} />
+                <span className="dot" style={{ background: t.outcome.aussteuerung }} />
                 <span>
                   <b>Korrekt erkannte Aussteuerung</b>
                   <div className="dim">kein Fehler — bewusst zur manuellen Prüfung gegeben</div>
                 </span>
               </div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: outcomeColors.nichtErfolgreich }} />
+                <span className="dot" style={{ background: t.outcome.nichtErfolgreich }} />
                 <span>
                   <b>Nicht erfolgreich</b>
-                  <div className="dim">an einem Fremdsystem oder der Infrastruktur gescheitert</div>
+                  <div className="dim">der Vorgang konnte nicht abgeschlossen werden</div>
                 </span>
               </div>
               <div className="legend-entry">
-                <span className="dot" style={{ background: outcomeColors.prozessfehler }} />
+                <span className="dot" style={{ background: t.outcome.neustart }} />
                 <span>
                   <b>Neustartfähiger Vorgang</b>
-                  <div className="dim">vorübergehende Systemausnahme — der Vorgang wird neu gestartet</div>
+                  <div className="dim">vorübergehende Systemausnahme — der Vorgang kann erneut gestartet werden</div>
                 </span>
               </div>
             </div>
 
             <div className="legend-group">
-              <div className="legend-group-title">Zuständigkeit</div>
-              {RESPONSIBILITY_ORDER.map((r) => (
-                <div className="legend-entry" key={r}>
-                  <span className="dot" style={{ background: resp[r] }} />
+              <div className="legend-group-title">Kategorie eines offenen Punkts</div>
+              {CATEGORY_ORDER.map((c) => (
+                <div className="legend-entry" key={c}>
+                  <span className="dot" style={{ background: t.category[c] }} />
                   <span>
-                    <b>{RESPONSIBILITY_LABELS[r]}</b>
-                    <div className="dim">{RESPONSIBILITY_HINTS[r]}</div>
+                    <b>{CATEGORY_LABELS_DE[c]}</b>
+                    <div className="dim">{CATEGORY_HINTS_DE[c]}</div>
                   </span>
                 </div>
               ))}
@@ -118,11 +108,10 @@ export function ColorLegend({
           </div>
 
           <div className="legend-note">
-            Ergebnis und Zuständigkeit teilen sich bewusst dieselben Farben: <b>gelb</b> steht
-            durchgehend für die Infrastruktur der V-Bank, <b>violett</b> für die Automatisierung
-            von Exelentic, <b>grau</b> für neustartfähige Vorgänge ohne Zuständigkeit und <b>blau</b>{' '}
-            für Vorgänge beim Fachbereich. Die Ampelfarben auf den Prozesskarten sind davon
-            unabhängig und stehen immer neben ihrem Wort.
+            Jeder offene Punkt trägt genau eine Kategorie: <b>violett</b> steht für die Automatisierung von Exelentic und die
+            UiPath-Plattform, <b>türkis</b> für das Kernbanksystem Avaloq, <b>gelb</b> für die Infrastruktur der V-Bank,{' '}
+            <b>blau</b> für fachliche Klärungen im Fachbereich und <b>grau</b> für neustartfähige Vorgänge ohne Zuständigkeit.
+            Die Ampelfarben der Automatisierungen sind davon unabhängig und stehen immer neben ihrem Wort.
           </div>
         </>
       ) : null}

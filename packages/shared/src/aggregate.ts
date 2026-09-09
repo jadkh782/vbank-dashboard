@@ -1,11 +1,12 @@
-import type { OrchJob, OrchQueueItem, TenantData } from './orchestrator.types'
-import type { AppSettings, ManualError } from './settings'
-import { classifyAppEx } from './errors'
+// Aggregates over the domain rows (published views or demo data). Pure
+// functions; the dashboard and the Control Board's Auswertung share them so
+// the numbers agree before and after publishing.
+
+import type { Category } from './categories'
+import type { Automation, ManualErrorRow, Run, Txn } from './domain'
 import { buildBuckets, bucketIndexOf } from './dates'
 
 // ── Window splitting ────────────────────────────────────────────────────────
-// fetchTenantData fetches [from - window, to]; these helpers slice the raw
-// records into the current window and the previous equivalent window.
 
 export function inWindow<T>(items: T[], timeOf: (t: T) => string, from: Date, to: Date): T[] {
   const f = from.getTime()
@@ -21,239 +22,189 @@ export function previousWindow(from: Date, to: Date): { from: Date; to: Date } {
   return { from: new Date(from.getTime() - span), to: from }
 }
 
-// ── Jobs ────────────────────────────────────────────────────────────────────
+// ── Process runs ────────────────────────────────────────────────────────────
 
-export interface JobKpis {
+export interface RunKpis {
   total: number
-  successful: number
+  success: number
   faulted: number
   stopped: number
   running: number
-  successRate: number // % of finished runs
-  avgDurationMs: number
+  /** % of finished runs that succeeded. */
+  successRate: number
+  runtimeMs: number
 }
 
-export function jobKpis(jobs: OrchJob[]): JobKpis {
-  let successful = 0
+export function runKpis(runs: Run[]): RunKpis {
+  let success = 0
   let faulted = 0
   let stopped = 0
   let running = 0
-  let durSum = 0
-  let durCount = 0
-  for (const j of jobs) {
-    if (j.State === 'Successful') successful++
-    else if (j.State === 'Faulted') faulted++
-    else if (j.State === 'Stopped') stopped++
-    else if (j.State === 'Running') running++
-    if (j.StartTime && j.EndTime) {
-      const d = new Date(j.EndTime).getTime() - new Date(j.StartTime).getTime()
-      if (d >= 0) {
-        durSum += d
-        durCount++
-      }
+  let runtimeMs = 0
+  for (const r of runs) {
+    if (r.state === 'success') success++
+    else if (r.state === 'faulted') faulted++
+    else if (r.state === 'stopped') stopped++
+    else running++
+    if (r.startedAt) {
+      const end = r.endedAt ? new Date(r.endedAt).getTime() : Date.now()
+      const d = end - new Date(r.startedAt).getTime()
+      if (d > 0) runtimeMs += d
     }
   }
-  const finished = successful + faulted + stopped
-  return {
-    total: jobs.length,
-    successful,
-    faulted,
-    stopped,
-    running,
-    successRate: finished > 0 ? (successful / finished) * 100 : NaN,
-    avgDurationMs: durCount > 0 ? durSum / durCount : NaN,
-  }
+  const finished = success + faulted + stopped
+  return { total: runs.length, success, faulted, stopped, running, successRate: finished > 0 ? (success / finished) * 100 : NaN, runtimeMs }
 }
 
-export interface TimePoint {
+// ── Queue transactions ──────────────────────────────────────────────────────
+
+export interface TxnKpis {
+  total: number
+  success: number
+  businessExceptions: number
+  ignored: number
+  failed: number
+  pending: number
+  /** Successful transactions that needed more than one attempt. */
+  recovered: number
+  /** Correctly handled = success + business exceptions + ignored. */
+  correct: number
+  /** Decided transactions = correct + failed. */
+  processed: number
+  /** % correct of processed. */
+  successRate: number
+  processingMs: number
+}
+
+export function txnKpis(txns: Txn[]): TxnKpis {
+  const k: TxnKpis = {
+    total: txns.length,
+    success: 0,
+    businessExceptions: 0,
+    ignored: 0,
+    failed: 0,
+    pending: 0,
+    recovered: 0,
+    correct: 0,
+    processed: 0,
+    successRate: NaN,
+    processingMs: 0,
+  }
+  for (const t of txns) {
+    switch (t.outcome) {
+      case 'success':
+        k.success++
+        if (t.attempts > 1) k.recovered++
+        break
+      case 'business_exception':
+        k.businessExceptions++
+        break
+      case 'ignored':
+        k.ignored++
+        break
+      case 'failed':
+        k.failed++
+        break
+      default:
+        k.pending++
+    }
+    if (t.processingMs) k.processingMs += t.processingMs
+  }
+  k.correct = k.success + k.businessExceptions + k.ignored
+  k.processed = k.correct + k.failed
+  k.successRate = k.processed > 0 ? (k.correct / k.processed) * 100 : NaN
+  return k
+}
+
+/** Failed transactions by category (the open points of the queues). */
+export function failedByCategory(txns: Txn[]): Partial<Record<Category, number>> {
+  const out: Partial<Record<Category, number>> = {}
+  for (const t of txns) {
+    if (t.outcome !== 'failed' || !t.category) continue
+    out[t.category] = (out[t.category] ?? 0) + 1
+  }
+  return out
+}
+
+export interface VolumePoint {
   label: string
   start: Date
+  'Korrekt verarbeitet': number
+  'Nicht erfolgreich': number
   [series: string]: string | number | Date
 }
 
-// ── Queues ──────────────────────────────────────────────────────────────────
-
-export interface QueueKpis {
-  total: number
-  successful: number
-  appExceptions: number
-  bizExceptions: number
-  pending: number
-  successRate: number
-  avgHandlingMs: number
-}
-
-export function queueKpis(items: OrchQueueItem[]): QueueKpis {
-  let successful = 0
-  let app = 0
-  let biz = 0
-  let pending = 0
-  let handleSum = 0
-  let handleCount = 0
-  for (const q of items) {
-    if (q.Status === 'Successful') successful++
-    else if (q.Status === 'Failed' || q.Status === 'Abandoned' || q.Status === 'Retried') {
-      if (q.ProcessingExceptionType === 'BusinessException') biz++
-      else app++
-    } else if (q.Status === 'New' || q.Status === 'InProgress') pending++
-    if (q.StartProcessing && q.EndProcessing) {
-      const d = new Date(q.EndProcessing).getTime() - new Date(q.StartProcessing).getTime()
-      if (d >= 0) {
-        handleSum += d
-        handleCount++
-      }
-    }
-  }
-  const processed = successful + app + biz
-  return {
-    total: items.length,
-    successful,
-    appExceptions: app,
-    bizExceptions: biz,
-    pending,
-    successRate: processed > 0 ? (successful / processed) * 100 : NaN,
-    avgHandlingMs: handleCount > 0 ? handleSum / handleCount : NaN,
-  }
-}
-
-const QUEUE_OUTCOMES = ['Successful', 'App exception', 'Business exception', 'Pending'] as const
-
-function queueOutcomeOf(q: OrchQueueItem): (typeof QUEUE_OUTCOMES)[number] | null {
-  if (q.Status === 'Successful') return 'Successful'
-  if (q.Status === 'Failed' || q.Status === 'Abandoned' || q.Status === 'Retried') {
-    return q.ProcessingExceptionType === 'BusinessException' ? 'Business exception' : 'App exception'
-  }
-  if (q.Status === 'New' || q.Status === 'InProgress') return 'Pending'
-  return null
-}
-
-export function queueVolumeOverTime(items: OrchQueueItem[], from: Date, to: Date) {
+/** Transactions per bucket: correct vs. failed (pending left out). */
+export function volumeOverTime(txns: Txn[], from: Date, to: Date) {
   const { unit, buckets } = buildBuckets(from, to)
-  const rows: TimePoint[] = buckets.map((b) => {
-    const row: TimePoint = { label: b.label, start: b.start }
-    for (const o of QUEUE_OUTCOMES) row[o] = 0
-    return row
-  })
-  for (const q of items) {
-    const idx = bucketIndexOf(new Date(q.CreationTime), from, unit, rows.length)
+  const rows: VolumePoint[] = buckets.map((b) => ({ label: b.label, start: b.start, 'Korrekt verarbeitet': 0, 'Nicht erfolgreich': 0 }))
+  for (const t of txns) {
+    const idx = bucketIndexOf(new Date(t.createdAt), from, unit, rows.length)
     if (idx < 0) continue
-    const outcome = queueOutcomeOf(q)
-    if (outcome) rows[idx][outcome] = (rows[idx][outcome] as number) + 1
+    if (t.outcome === 'failed') rows[idx]['Nicht erfolgreich']++
+    else if (t.outcome !== 'pending') rows[idx]['Korrekt verarbeitet']++
   }
   return { unit, rows }
 }
 
-// ── Transaction scorecard per queue ─────────────────────────────────────────
+// ── Scorecard per queue ─────────────────────────────────────────────────────
 
 export interface ScorecardRow {
-  queue: string
+  automationId: string
+  technicalName: string
+  displayName: string
   folder: string
   items: number
-  successful: number
-  appExSystem: number
-  appExBot: number
+  correct: number
+  failed: number
+  byCategory: Partial<Record<Category, number>>
+  /** Manual IT incidents attached to this automation. */
   manual: number
-  businessEx: number
-  avgHandlingMs: number
-  botHours: number // Σ measured handling time
+  /** Σ measured processing time in hours — the "Betriebsstunden" of a queue. */
+  botHours: number
+  humanMinutesPerItem: number | null
 }
 
-export function scorecard(
-  data: TenantData,
-  items: OrchQueueItem[],
-  manualErrors: ManualError[],
-  settings: AppSettings,
-): ScorecardRow[] {
-  const rows = new Map<number, ScorecardRow & { handleSum: number; handleCount: number }>()
-  for (const def of data.queues) {
-    rows.set(def.Id, {
-      queue: def.Name,
-      folder: def.FolderName,
+export function scorecard(automations: Automation[], txns: Txn[], manual: ManualErrorRow[]): ScorecardRow[] {
+  const rows = new Map<string, ScorecardRow>()
+  for (const a of automations) {
+    if (a.kind !== 'queue') continue
+    rows.set(a.id, {
+      automationId: a.id,
+      technicalName: a.technicalName,
+      displayName: a.displayName,
+      folder: a.folder,
       items: 0,
-      successful: 0,
-      appExSystem: 0,
-      appExBot: 0,
+      correct: 0,
+      failed: 0,
+      byCategory: {},
       manual: 0,
-      businessEx: 0,
-      avgHandlingMs: NaN,
       botHours: 0,
-      handleSum: 0,
-      handleCount: 0,
+      humanMinutesPerItem: a.humanMinutesPerItem,
     })
   }
-  for (const q of items) {
-    const r = rows.get(q.QueueDefinitionId)
+  for (const t of txns) {
+    const r = rows.get(t.automationId)
     if (!r) continue
     r.items++
-    if (q.Status === 'Successful') r.successful++
-    else if (q.Status === 'Failed' || q.Status === 'Retried' || q.Status === 'Abandoned') {
-      if (q.ProcessingExceptionType === 'BusinessException') r.businessEx++
-      else {
-        const reason = q.ProcessingException?.Reason ?? ''
-        if (classifyAppEx(reason, settings.systemKeywords) === 'system') r.appExSystem++
-        else r.appExBot++
-      }
-    }
-    if (q.StartProcessing && q.EndProcessing) {
-      const d = new Date(q.EndProcessing).getTime() - new Date(q.StartProcessing).getTime()
-      if (d >= 0) {
-        r.handleSum += d
-        r.handleCount++
-      }
-    }
+    if (t.outcome === 'failed') {
+      r.failed++
+      if (t.category) r.byCategory[t.category] = (r.byCategory[t.category] ?? 0) + 1
+    } else if (t.outcome !== 'pending') r.correct++
+    if (t.processingMs) r.botHours += t.processingMs / 3600_000
   }
-
-  // Manual errors attach to the row whose queue name matches the entered
-  // process; unmatched processes get their own manual-only rows.
-  const extra = new Map<string, ScorecardRow>()
-  for (const m of manualErrors) {
-    const match = [...rows.values()].find((r) => r.queue.toLowerCase() === m.process.toLowerCase())
-    if (match) {
-      match.manual++
-      continue
-    }
-    let e = extra.get(m.process)
-    if (!e) {
-      e = {
-        queue: m.process,
-        folder: m.folder ?? '—',
-        items: 0,
-        successful: 0,
-        appExSystem: 0,
-        appExBot: 0,
-        manual: 0,
-        businessEx: 0,
-        avgHandlingMs: NaN,
-        botHours: 0,
-      }
-      extra.set(m.process, e)
-    }
-    e.manual++
+  for (const m of manual) {
+    const r = m.automationId ? rows.get(m.automationId) : undefined
+    if (r) r.manual++
   }
-
-  return [
-    ...[...rows.values()]
-      .filter((r) => r.items > 0 || r.manual > 0)
-      .map((r) => ({
-        queue: r.queue,
-        folder: r.folder,
-        items: r.items,
-        successful: r.successful,
-        appExSystem: r.appExSystem,
-        appExBot: r.appExBot,
-        manual: r.manual,
-        businessEx: r.businessEx,
-        avgHandlingMs: r.handleCount > 0 ? r.handleSum / r.handleCount : NaN,
-        botHours: r.handleSum / 3600_000,
-      })),
-    ...extra.values(),
-  ].sort((a, b) => b.items - a.items)
+  return [...rows.values()].filter((r) => r.items > 0 || r.manual > 0).sort((a, b) => b.items - a.items)
 }
 
 // ── Time saved vs. human processing ─────────────────────────────────────────
 
 export interface TimeSavedRow {
-  queue: string
+  automationId: string
+  displayName: string
   items: number
   botHours: number
   botPT: number
@@ -264,23 +215,23 @@ export interface TimeSavedRow {
   savedPct: number | null
 }
 
-export function timeSaved(rows: ScorecardRow[], settings: AppSettings): TimeSavedRow[] {
-  const hoursPerPT = settings.hoursPerPT > 0 ? settings.hoursPerPT : 8
+export function timeSaved(rows: ScorecardRow[], hoursPerPT: number): TimeSavedRow[] {
+  const perPT = hoursPerPT > 0 ? hoursPerPT : 8
   return rows
     .filter((r) => r.items > 0)
     .map((r) => {
-      const perItem = settings.humanMinutesPerItem[r.queue] ?? null
-      const humanHours = perItem !== null ? (r.items * perItem) / 60 : null
+      const humanHours = r.humanMinutesPerItem !== null ? (r.items * r.humanMinutesPerItem) / 60 : null
       const savedHours = humanHours !== null ? humanHours - r.botHours : null
       return {
-        queue: r.queue,
+        automationId: r.automationId,
+        displayName: r.displayName,
         items: r.items,
         botHours: r.botHours,
-        botPT: r.botHours / hoursPerPT,
-        humanMinutesPerItem: perItem,
+        botPT: r.botHours / perPT,
+        humanMinutesPerItem: r.humanMinutesPerItem,
         humanHours,
         savedHours,
-        savedPT: savedHours !== null ? savedHours / hoursPerPT : null,
+        savedPT: savedHours !== null ? savedHours / perPT : null,
         savedPct: savedHours !== null && humanHours ? (savedHours / humanHours) * 100 : null,
       }
     })
@@ -298,12 +249,12 @@ export interface ActivityMatrix {
 export const WEEKDAYS_DE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
 /** When do the automations actually work — transaction volume by weekday and hour. */
-export function activityMatrix(items: OrchQueueItem[]): ActivityMatrix {
+export function activityMatrix(txns: Txn[]): ActivityMatrix {
   const counts: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0))
   let max = 0
   let total = 0
-  for (const q of items) {
-    const d = new Date(q.CreationTime)
+  for (const t of txns) {
+    const d = new Date(t.createdAt)
     const weekday = (d.getDay() + 6) % 7 // JS: 0 = Sunday -> we want 0 = Monday
     const hour = d.getHours()
     const next = ++counts[weekday][hour]

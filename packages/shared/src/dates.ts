@@ -8,7 +8,7 @@ export interface Bucket {
 export type BucketUnit = 'hour' | 'day'
 
 /** Pick a bucket size that yields a readable number of bars for the range. */
-export function bucketUnitFor(from: Date, to: Date): BucketUnit {
+function bucketUnitFor(from: Date, to: Date): BucketUnit {
   const hours = (to.getTime() - from.getTime()) / 3600_000
   return hours <= 49 ? 'hour' : 'day'
 }
@@ -22,7 +22,7 @@ export function buildBuckets(from: Date, to: Date): { unit: BucketUnit; buckets:
     }
   } else {
     for (let d = startOfDay(from); d <= to; d = addDays(d, 1)) {
-      buckets.push({ start: d, label: format(d, 'dd MMM') })
+      buckets.push({ start: d, label: format(d, 'dd.MM.') })
     }
   }
   return { unit, buckets }
@@ -35,7 +35,17 @@ export function bucketIndexOf(time: Date, from: Date, unit: BucketUnit, count: n
   return idx >= 0 && idx < count ? idx : -1
 }
 
-/** Format a Date for a datetime-local input (local time, minute precision). */
-export function toInputValue(d: Date): string {
-  return format(d, "yyyy-MM-dd'T'HH:mm")
+/** Format a Date for a `<input type="date">` (local date). */
+export function toDateInputValue(d: Date): string {
+  return format(d, 'yyyy-MM-dd')
+}
+
+/**
+ * Keep a custom window inside [earliest, latest]: `to` never exceeds the last
+ * published moment, `from` never exceeds `to`.
+ */
+export function clampWindow(from: Date, to: Date, latest: Date): { from: Date; to: Date } {
+  const t = to > latest ? latest : to
+  const f = from > t ? new Date(t.getTime() - 24 * 3600_000) : from
+  return { from: f, to: t }
 }

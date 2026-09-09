@@ -574,3 +574,15 @@ table.tbl {
       display: inline;
     }
 }
+
+/* Text that behaves like a link but is a button (footer refresh, inline actions). */
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}

@@ -15,7 +15,7 @@ export function DataTable<T>({
   rows,
   initialSort,
   maxRows,
-  emptyText = 'No records in the selected window.',
+  emptyText = 'Keine Einträge im gewählten Zeitraum.',
   onRowClick,
   rowKey,
 }: {
@@ -116,7 +116,7 @@ export function DataTable<T>({
       </table>
       {maxRows && sorted.length > maxRows ? (
         <div className="card-sub" style={{ marginTop: 8 }}>
-          Showing {maxRows} of {sorted.length.toLocaleString('en-US')} rows.
+          {maxRows} von {sorted.length.toLocaleString('de-DE')} Zeilen angezeigt.
         </div>
       ) : null}
     </div>

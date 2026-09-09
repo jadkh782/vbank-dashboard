@@ -1,6 +1,6 @@
-// The six review categories. They replace the old keyword rule and the
-// Responsibility type: every failed transaction and faulted run gets exactly
-// one of these in the Control Board, and the dashboard shows the result.
+// The six categories. They replace the old keyword rule and the owner type:
+// every failed transaction and faulted run gets exactly one of these, and the
+// dashboard shows the result.
 
 export type Category =
   | 'exelentic_uipath'

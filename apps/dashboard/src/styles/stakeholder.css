@@ -465,9 +465,9 @@
   color: var(--ink-3);
 }
 
-/* ── Responsibility ───────────────────────────────────────────────────── */
+/* ── Category split ───────────────────────────────────────────────────── */
 
-.resp-badge {
+.cat-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -481,14 +481,14 @@
   white-space: nowrap;
 }
 
-.resp-badge .dot {
+.cat-badge .dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.resp-bar {
+.cat-bar {
   display: flex;
   gap: 1px;
   height: 26px;
@@ -497,11 +497,11 @@
   overflow: hidden;
 }
 
-.resp-seg {
+.cat-seg {
   min-width: 3px;
 }
 
-.resp-row {
+.cat-row {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -510,11 +510,11 @@
   font-size: 12.5px;
 }
 
-.resp-row:last-of-type {
+.cat-row:last-of-type {
   border-bottom: none;
 }
 
-.resp-row .dot {
+.cat-row .dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -522,16 +522,16 @@
   flex-shrink: 0;
 }
 
-.resp-row .grow {
+.cat-row .grow {
   flex: 1;
   min-width: 0;
 }
 
-.resp-row b {
+.cat-row b {
   color: var(--ink);
 }
 
-.resp-count {
+.cat-count {
   display: flex;
   align-items: baseline;
   gap: 7px;
@@ -539,7 +539,7 @@
   white-space: nowrap;
 }
 
-.resp-count b {
+.cat-count b {
   font-family: var(--font-display);
   font-size: 19px;
   font-weight: 700;
@@ -549,7 +549,7 @@
 /* Notes are set off by a brand rule on the leading edge rather than a tinted
    box — a filled panel here competes with the data for attention. */
 
-.resp-note {
+.cat-note {
   margin-top: 14px;
   padding: 2px 0 2px 13px;
   border-left: 2px solid var(--rule-2);
@@ -678,7 +678,7 @@
       display: none;
     }
 
-  .resp-count b {
+  .cat-count b {
       font-size: 17px;
     }
 

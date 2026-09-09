@@ -1,13 +1,14 @@
+import { deDate } from '@vbank/shared'
 import { useThemeMode } from '@vbank/ui'
 
 export function Header({
-  lastUpdated,
-  live,
+  datenstand,
   onPresent,
+  onSignOut,
 }: {
-  lastUpdated: number | null
-  live: boolean
+  datenstand: string
   onPresent: () => void
+  onSignOut?: () => void
 }) {
   const { mode, toggle } = useThemeMode()
 
@@ -22,19 +23,18 @@ export function Header({
         </span>
       </div>
       <div className="masthead-right">
-        <span className={`live-dot${live ? '' : ' paused'}`} />
-        <span>
-          {live ? 'Live' : 'Pausiert'}
-          {lastUpdated
-            ? ` · Stand ${new Date(lastUpdated).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
-            : ''}
-        </span>
+        <span className="datenstand">Datenstand: {deDate(datenstand)}</span>
         <button className="theme-toggle present-btn" onClick={onPresent}>
           Präsentation
         </button>
         <button className="theme-toggle" onClick={toggle}>
           {mode === 'light' ? 'Dunkel' : 'Hell'}
         </button>
+        {onSignOut ? (
+          <button className="theme-toggle" onClick={onSignOut}>
+            Abmelden
+          </button>
+        ) : null}
       </div>
     </header>
   )

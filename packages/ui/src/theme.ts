@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import { CATEGORY_COLORS, type Category } from '@vbank/shared'
 
 export type ThemeMode = 'light' | 'dark'
 
@@ -9,15 +10,22 @@ export interface ChartTheme {
   axisInk: string
   ink: string
   accent: string
-  state: Record<string, string>
-  queueOutcome: Record<string, string>
-  errorSource: Record<string, string>
-  alertSeverity: Record<string, string>
+  /** Trend series: correct vs. not successful. */
+  ok: string
+  bad: string
+  /**
+   * Outcome palette. The order Erfolgreich → Aussteuerung → Nicht erfolgreich →
+   * Neustart is the one the colour-vision validator clears in both themes
+   * (green must not neighbour a warm hue; violet must not neighbour blue).
+   */
+  outcome: { erfolgreich: string; aussteuerung: string; nichtErfolgreich: string; neustart: string }
+  category: Record<Category, string>
+  health: { ok: string; attention: string; critical: string }
 }
 
-// Chart chrome tracks the CSS token scale (see global.css). Only the chrome
-// moves with the redesign — every data-bearing palette below is fixed, having
-// been cleared by the colour-vision validator in both modes.
+// Chart chrome tracks the CSS token scale (see packages/ui/styles/tokens.css).
+// Every data-bearing palette is fixed, having been cleared by the colour-vision
+// validator in both modes.
 const light: ChartTheme = {
   surface: '#ffffff',
   grid: '#e2e8f0',
@@ -25,34 +33,11 @@ const light: ChartTheme = {
   axisInk: '#64748b',
   ink: '#0f172a',
   accent: '#3b82f6',
-  state: {
-    Successful: '#16a34a',
-    Faulted: '#dc2626',
-    Stopped: '#f97316',
-    Running: '#3b82f6',
-    Pending: '#94a3b8',
-    Suspended: '#7c3aed',
-  },
-  queueOutcome: {
-    Successful: '#16a34a',
-    'App exception': '#7c3aed',
-    'Business exception': '#d97706',
-    Pending: '#94a3b8',
-  },
-  errorSource: {
-    'Job fault': '#dc2626',
-    'App exception (system)': '#7c3aed',
-    'App exception (bot)': '#3b82f6',
-    'Business exception': '#d97706',
-    'Manual (IT)': '#0d9488',
-  },
-  alertSeverity: {
-    Fatal: '#dc2626',
-    Error: '#f97316',
-    Warn: '#d97706',
-    Info: '#3b82f6',
-    Success: '#16a34a',
-  },
+  ok: '#16a34a',
+  bad: '#dc2626',
+  outcome: { erfolgreich: '#16a34a', aussteuerung: '#3b82f6', nichtErfolgreich: '#d97706', neustart: '#7c3aed' },
+  category: CATEGORY_COLORS.light,
+  health: { ok: '#0ca30c', attention: '#c98500', critical: '#d03b3b' },
 }
 
 const dark: ChartTheme = {
@@ -63,38 +48,10 @@ const dark: ChartTheme = {
   axisInk: '#94a3b8',
   ink: '#f1f5f9',
   accent: '#60a5fa',
-  state: {
-    ...light.state,
-    Successful: '#22c55e',
-    Faulted: '#f04444',
-    Running: '#60a5fa',
-    Stopped: '#fb923c',
-    Suspended: '#a78bfa',
-    Pending: '#8592a6',
-  },
-  queueOutcome: {
-    ...light.queueOutcome,
-    Successful: '#22c55e',
-    'App exception': '#a78bfa',
-    'Business exception': '#f59e0b',
-    Pending: '#8592a6',
-  },
-  errorSource: {
-    ...light.errorSource,
-    'Job fault': '#f04444',
-    'App exception (system)': '#a78bfa',
-    'App exception (bot)': '#60a5fa',
-    'Business exception': '#f59e0b',
-    'Manual (IT)': '#14b8a6',
-  },
-  alertSeverity: {
-    ...light.alertSeverity,
-    Fatal: '#f04444',
-    Error: '#fb923c',
-    Warn: '#f59e0b',
-    Info: '#60a5fa',
-    Success: '#22c55e',
-  },
+  ok: '#22c55e',
+  bad: '#f04444',
+  outcome: { erfolgreich: '#22c55e', aussteuerung: '#60a5fa', nichtErfolgreich: '#f59e0b', neustart: '#a78bfa' },
+  category: CATEGORY_COLORS.dark,
 }
 
 export const chartThemes: Record<ThemeMode, ChartTheme> = { light, dark }

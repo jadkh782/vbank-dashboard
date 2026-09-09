@@ -1,10 +1,10 @@
-// Health scoring, friendly naming and German plain-language helpers for the
-// stakeholder view. Pure presentation logic on top of the existing aggregates.
+// Health scoring and the stakeholder cards — pure presentation logic on top of
+// the aggregates.
 
-import type { AppSettings, ManualError } from './settings'
-import type { OrchJob, OrchQueueItem, TenantData } from './orchestrator.types'
-import type { ErrorGroup, ErrorSource, Responsibility } from './errors'
-import type { ScorecardRow } from './aggregate'
+import type { Category } from './categories'
+import type { Automation, ManualErrorRow, Run, Thresholds, Txn } from './domain'
+import type { IssueGroup } from './issues'
+import { ISSUE_KIND_LABELS_DE } from './issues'
 import { buildBuckets, bucketIndexOf, type Bucket } from './dates'
 
 export type Health = 'ok' | 'attention' | 'critical'
@@ -15,51 +15,14 @@ export const HEALTH_LABELS_DE: Record<Health, string> = {
   critical: 'gestört',
 }
 
-export const SOURCE_LABELS_DE: Record<ErrorSource, string> = {
-  'Job fault': 'Prozessabbruch',
-  'App exception (system)': 'Nicht erfolgreich',
-  // A transient system exception on one queue item — the item is restarted,
-  // nothing in the automation is broken.
-  'App exception (bot)': 'Neustartfähiger Vorgang',
-  // Not a failure: the automation correctly recognised that this item belongs
-  // in manual handling and routed it out.
-  'Business exception': 'Korrekt erkannte Aussteuerung',
-  'Manual (IT)': 'IT-Störung',
+// One-word form for phones, where "benötigt Aufmerksamkeit" does not fit.
+export const HEALTH_SHORT_DE: Record<Health, string> = {
+  ok: 'normal',
+  attention: 'auffällig',
+  critical: 'gestört',
 }
 
-// ── Responsibility: who has to act ─────────────────────────────────────────
-
-export const RESPONSIBILITY_LABELS: Record<Responsibility, string> = {
-  it: 'V-Bank IT',
-  automation: 'Exelentic',
-  restartable: 'Neustartfähige Vorgänge',
-  business: 'Fachbereich',
-}
-
-export const RESPONSIBILITY_HINTS: Record<Responsibility, string> = {
-  it: 'Server, Netzwerk, Zugänge und angebundene Fremdsysteme',
-  automation: 'Automatisierung selbst — Abläufe und Prozesslogik',
-  restartable: 'vorübergehende Systemausnahme — der Vorgang wird neu gestartet, kein Eingriff nötig',
-  business: 'kein Fehler — korrekt ausgesteuert zur manuellen Bearbeitung',
-}
-
-/**
- * Validated together with the outcome palette; badges always carry their label too.
- * Restartable Elements are deliberately neutral slate: no owner, no blame.
- */
-export const RESPONSIBILITY_COLORS: Record<'light' | 'dark', Record<Responsibility, string>> = {
-  light: { automation: '#4a3aa7', it: '#eda100', restartable: '#64748b', business: '#2a78d6' },
-  dark: { automation: '#9085e9', it: '#c98500', restartable: '#94a3b8', business: '#3987e5' },
-}
-
-/** Order used wherever they appear as one bar — adjacent pairs validated (slate is neutral). */
-export const RESPONSIBILITY_ORDER: Responsibility[] = ['automation', 'it', 'restartable', 'business']
-
-export function healthOf(
-  successRate: number,
-  manualErrorCount: number,
-  thresholds: AppSettings['healthThresholds'],
-): Health {
+export function healthOf(successRate: number, manualErrorCount: number, thresholds: Thresholds): Health {
   let h: Health
   if (!isFinite(successRate)) h = 'ok'
   else if (successRate >= thresholds.okMin) h = 'ok'
@@ -68,8 +31,6 @@ export function healthOf(
   if (manualErrorCount > 0 && h === 'ok') h = 'attention'
   return h
 }
-
-// ── Naming ─────────────────────────────────────────────────────────────────
 
 /**
  * "A-20401-008-ÜberweisungExtern" -> "Überweisung Extern",
@@ -89,218 +50,151 @@ export function autoCleanName(technical: string): string {
   return cleaned || technical
 }
 
-export function friendlyName(technical: string, settings: AppSettings): string {
-  return settings.displayInfo[technical]?.name?.trim() || autoCleanName(technical)
-}
-
-export function friendlyDescription(technical: string, settings: AppSettings): string | undefined {
-  return settings.displayInfo[technical]?.description?.trim() || undefined
-}
-
-// ── German formatting ──────────────────────────────────────────────────────
-
-export function deInt(n: number): string {
-  return n.toLocaleString('de-DE')
-}
-
-export function dePct(n: number, digits = 1): string {
-  if (!isFinite(n)) return '–'
-  return `${n.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits })} %`
-}
-
-export function deHours(h: number): string {
-  if (!isFinite(h)) return '–'
-  return `${h.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Std.`
-}
-
-export function dePT(pt: number): string {
-  if (!isFinite(pt)) return '–'
-  return `${pt.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Personentage`
-}
-
-export function deDateTime(iso: string | Date): string {
-  const d = typeof iso === 'string' ? new Date(iso) : iso
-  return d.toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-}
-
-// ── Stakeholder cards: "Was passiert wo" ───────────────────────────────────
+// ── Stakeholder cards ───────────────────────────────────────────────────────
 
 export interface StakeholderCard {
+  /** = automation id; also the DOM focus key of the table row. */
   key: string
+  automationId: string
   technicalName: string
   displayName: string
-  description?: string
-  area: string // Bereich (folder display name)
+  description: string | null
+  /** Bereich (folder display name). */
+  area: string
   kind: 'process' | 'queue'
-  /** Vorgänge for queues (items), Läufe for processes (runs). */
+  /** Vorgänge for queues (transactions), Läufe for processes (runs). */
   count: number
   countLabel: string
   successRate: number
   /** Betriebsstunden — how long this automation actually worked in the window. */
   runtimeHours: number
+  /** Transactions that succeeded after a retry (queues only). */
+  recovered: number
   lastActivity: string | null
   health: Health
-  issue?: string // plain-German reason, only when unhealthy
-  /** Who has to act on the dominant issue — only set when unhealthy. */
-  issueResponsibility?: Responsibility
+  /** Plain-German reason, only when unhealthy. */
+  issue?: string
+  /** Category of the dominant issue — only set when unhealthy. */
+  issueCategory?: Category
 }
 
-function issueFor(
-  technicalName: string,
-  groups: ErrorGroup[],
-  manualForName: ManualError[],
-): { text: string; responsibility: Responsibility } | undefined {
-  if (manualForName.length > 0) {
-    const m = manualForName[0]
-    return {
-      text: `${manualForName.length}× IT-Störung gemeldet, zuletzt: ${m.category} – ${m.description}`.slice(0, 140),
-      responsibility: 'it',
-    }
+function issueFor(automationId: string, groups: IssueGroup[], manual: ManualErrorRow[]): { text: string; category: Category } | undefined {
+  if (manual.length > 0) {
+    const m = manual[0]
+    return { text: `${manual.length}× IT-Störung gemeldet, zuletzt: ${m.description}`.slice(0, 140), category: m.category }
   }
-  // Correctly routed-out items are not a problem — never explain a card with them.
   const relevant = groups
-    .filter(
-      (g) =>
-        g.responsibility !== 'business' &&
-        g.processes.some((p) => p.toLowerCase() === technicalName.toLowerCase()),
-    )
+    .filter((g) => g.kind !== 'manual' && g.category && g.automationIds.includes(automationId))
     .sort((a, b) => b.count - a.count)
   if (relevant.length === 0) return undefined
   const top = relevant[0]
   return {
-    text: `${top.count}× ${SOURCE_LABELS_DE[top.source]}${relevant.length > 1 ? ` (und ${relevant.length - 1} weitere Ursachen)` : ''}`,
-    responsibility: top.responsibility,
+    text: `${top.count}× ${ISSUE_KIND_LABELS_DE[top.kind]}${relevant.length > 1 ? ` (und ${relevant.length - 1} weitere Ursachen)` : ''}`,
+    category: top.category!,
   }
 }
 
 export function buildStakeholderCards(
-  data: TenantData,
-  jobs: OrchJob[],
-  scorecardRows: ScorecardRow[],
-  errorGroups: ErrorGroup[],
-  manualErrors: ManualError[],
-  settings: AppSettings,
+  automations: Automation[],
+  runs: Run[],
+  txns: Txn[],
+  issueGroups: IssueGroup[],
+  manual: ManualErrorRow[],
+  thresholds: Thresholds,
 ): StakeholderCard[] {
-  const manualByName = (name: string) =>
-    manualErrors.filter((m) => m.process.toLowerCase() === name.toLowerCase())
+  const runsBy = new Map<string, Run[]>()
+  for (const r of runs) (runsBy.get(r.automationId) ?? runsBy.set(r.automationId, []).get(r.automationId)!).push(r)
+  const txnsBy = new Map<string, Txn[]>()
+  for (const t of txns) (txnsBy.get(t.automationId) ?? txnsBy.set(t.automationId, []).get(t.automationId)!).push(t)
+  const manualBy = (id: string) => manual.filter((m) => m.automationId === id)
 
   const cards: StakeholderCard[] = []
-
-  // Processes (bots) — run-based figures, grouped per folder.
-  const byProcess = new Map<
-    string,
-    { folder: string; runs: number; ok: number; fin: number; last: string; runtimeMs: number }
-  >()
-  for (const j of jobs) {
-    const key = `${j.ReleaseName}::${j.FolderName}`
-    let p = byProcess.get(key)
-    if (!p) {
-      p = { folder: j.FolderName, runs: 0, ok: 0, fin: 0, last: j.CreationTime, runtimeMs: 0 }
-      byProcess.set(key, p)
+  for (const a of automations) {
+    const own = manualBy(a.id)
+    if (a.kind === 'process') {
+      const rs = runsBy.get(a.id) ?? []
+      if (rs.length === 0 && own.length === 0) continue
+      let ok = 0
+      let fin = 0
+      let runtimeMs = 0
+      let last: string | null = null
+      for (const r of rs) {
+        if (r.state !== 'running') {
+          fin++
+          if (r.state === 'success') ok++
+        }
+        if (!last || r.createdAt > last) last = r.createdAt
+        if (r.startedAt) {
+          const end = r.endedAt ? new Date(r.endedAt).getTime() : Date.now()
+          const d = end - new Date(r.startedAt).getTime()
+          if (d > 0) runtimeMs += d
+        }
+      }
+      const rate = fin > 0 ? (ok / fin) * 100 : NaN
+      const health = healthOf(rate, own.length, thresholds)
+      const issue = health === 'ok' ? undefined : issueFor(a.id, issueGroups, own)
+      cards.push({
+        key: a.id,
+        automationId: a.id,
+        technicalName: a.technicalName,
+        displayName: a.displayName,
+        description: a.description,
+        area: a.folder,
+        kind: 'process',
+        count: rs.length,
+        countLabel: rs.length === 1 ? 'Lauf' : 'Läufe',
+        successRate: rate,
+        runtimeHours: runtimeMs / 3600_000,
+        recovered: 0,
+        lastActivity: last,
+        health,
+        issue: issue?.text,
+        issueCategory: issue?.category,
+      })
+    } else {
+      const ts = txnsBy.get(a.id) ?? []
+      if (ts.length === 0 && own.length === 0) continue
+      let correct = 0
+      let failed = 0
+      let recovered = 0
+      let processingMs = 0
+      let last: string | null = null
+      for (const t of ts) {
+        if (t.outcome === 'failed') failed++
+        else if (t.outcome !== 'pending') {
+          correct++
+          if (t.outcome === 'success' && t.attempts > 1) recovered++
+        }
+        if (t.processingMs) processingMs += t.processingMs
+        if (!last || t.createdAt > last) last = t.createdAt
+      }
+      const processed = correct + failed
+      const rate = processed > 0 ? (correct / processed) * 100 : NaN
+      const health = healthOf(rate, own.length, thresholds)
+      const issue = health === 'ok' ? undefined : issueFor(a.id, issueGroups, own)
+      cards.push({
+        key: a.id,
+        automationId: a.id,
+        technicalName: a.technicalName,
+        displayName: a.displayName,
+        description: a.description,
+        area: a.folder,
+        kind: 'queue',
+        count: ts.length,
+        countLabel: ts.length === 1 ? 'Vorgang' : 'Vorgänge',
+        successRate: rate,
+        runtimeHours: processingMs / 3600_000,
+        recovered,
+        lastActivity: last,
+        health,
+        issue: issue?.text,
+        issueCategory: issue?.category,
+      })
     }
-    p.runs++
-    if (j.State === 'Successful' || j.State === 'Faulted' || j.State === 'Stopped') {
-      p.fin++
-      if (j.State === 'Successful') p.ok++
-    }
-    if (j.CreationTime > p.last) p.last = j.CreationTime
-    // Betriebszeit: a still-running job counts up to now.
-    if (j.StartTime) {
-      const end = j.EndTime ? new Date(j.EndTime).getTime() : Date.now()
-      const d = end - new Date(j.StartTime).getTime()
-      if (d > 0) p.runtimeMs += d
-    }
-  }
-  for (const [key, p] of byProcess) {
-    const name = key.split('::')[0]
-    const rate = p.fin > 0 ? (p.ok / p.fin) * 100 : NaN
-    const manual = manualByName(name)
-    const health = healthOf(rate, manual.length, settings.healthThresholds)
-    const issue = health === 'ok' ? undefined : issueFor(name, errorGroups, manual)
-    cards.push({
-      key: `p:${key}`,
-      technicalName: name,
-      displayName: friendlyName(name, settings),
-      description: friendlyDescription(name, settings),
-      area: p.folder,
-      kind: 'process',
-      count: p.runs,
-      countLabel: p.runs === 1 ? 'Lauf' : 'Läufe',
-      successRate: rate,
-      runtimeHours: p.runtimeMs / 3600_000,
-      lastActivity: p.last,
-      health,
-      issue: issue?.text,
-      issueResponsibility: issue?.responsibility,
-    })
-  }
-
-  // Queues — transaction-based figures.
-  for (const r of scorecardRows) {
-    if (r.items === 0 && r.manual === 0) continue
-    const processed = r.successful + r.appExSystem + r.appExBot + r.businessEx
-    // A business exception is a correct outcome (the item was recognised as
-    // one for manual handling), so it counts as correctly processed — not as
-    // a failure. Only genuine application errors reduce the rate.
-    const rate = processed > 0 ? ((r.successful + r.businessEx) / processed) * 100 : NaN
-    const manual = manualByName(r.queue)
-    const health = healthOf(rate, manual.length + r.manual, settings.healthThresholds)
-    const lastItem = data.queueItems
-      .filter((q) => data.queues.find((d) => d.Id === q.QueueDefinitionId)?.Name === r.queue)
-      .reduce<string | null>((acc, q) => (acc === null || q.CreationTime > acc ? q.CreationTime : acc), null)
-    const issue = health === 'ok' ? undefined : issueFor(r.queue, errorGroups, manual)
-    cards.push({
-      key: `q:${r.queue}::${r.folder}`,
-      technicalName: r.queue,
-      displayName: friendlyName(r.queue, settings),
-      description: friendlyDescription(r.queue, settings),
-      area: r.folder,
-      kind: 'queue',
-      count: r.items,
-      countLabel: r.items === 1 ? 'Vorgang' : 'Vorgänge',
-      successRate: rate,
-      // Same figure the Kennzahlen page reports as "Bot processing time".
-      runtimeHours: r.botHours,
-      lastActivity: lastItem,
-      health,
-      issue: issue?.text,
-      issueResponsibility: issue?.responsibility,
-    })
   }
 
   const order: Record<Health, number> = { critical: 0, attention: 1, ok: 2 }
-  return cards.sort(
-    (a, b) => a.area.localeCompare(b.area) || order[a.health] - order[b.health] || b.count - a.count,
-  )
-}
-
-// ── Per-card data slices (drill-down) ──────────────────────────────────────
-
-/** Queue name -> the queue ids carrying that name (a name can repeat across folders). */
-export function queueIdsByName(data: TenantData): Map<string, number[]> {
-  const map = new Map<string, number[]>()
-  for (const q of data.queues) {
-    const key = q.Name.toLowerCase()
-    const ids = map.get(key)
-    if (ids) ids.push(q.Id)
-    else map.set(key, [q.Id])
-  }
-  return map
-}
-
-export function jobsForCard(card: StakeholderCard, jobs: OrchJob[]): OrchJob[] {
-  if (card.kind !== 'process') return []
-  return jobs.filter((j) => j.ReleaseName === card.technicalName && j.FolderName === card.area)
-}
-
-export function queueItemsForCard(
-  card: StakeholderCard,
-  items: OrchQueueItem[],
-  idsByName: Map<string, number[]>,
-): OrchQueueItem[] {
-  if (card.kind !== 'queue') return []
-  const ids = new Set(idsByName.get(card.technicalName.toLowerCase()) ?? [])
-  return items.filter((q) => ids.has(q.QueueDefinitionId))
+  return cards.sort((a, b) => a.area.localeCompare(b.area) || order[a.health] - order[b.health] || b.count - a.count)
 }
 
 // ── Status timeline strip ──────────────────────────────────────────────────
@@ -316,39 +210,29 @@ export interface StripCell {
 }
 
 /**
- * Per-bucket health for one process/queue — the status-page style strip.
+ * Per-bucket health for one automation — the status-page style strip.
  * Buckets follow the global window (hourly for short ranges, daily beyond).
  */
-export function healthStrip(
-  card: StakeholderCard,
-  jobs: OrchJob[],
-  queueItems: OrchQueueItem[],
-  idsByName: Map<string, number[]>,
-  from: Date,
-  to: Date,
-  thresholds: AppSettings['healthThresholds'],
-): StripCell[] {
+export function healthStrip(card: StakeholderCard, runs: Run[], txns: Txn[], from: Date, to: Date, thresholds: Thresholds): StripCell[] {
   const { unit, buckets } = buildBuckets(from, to)
   const total = new Array(buckets.length).fill(0)
   const ok = new Array(buckets.length).fill(0)
 
   if (card.kind === 'process') {
-    for (const j of jobsForCard(card, jobs)) {
-      if (j.State !== 'Successful' && j.State !== 'Faulted' && j.State !== 'Stopped') continue
-      const idx = bucketIndexOf(new Date(j.CreationTime), from, unit, buckets.length)
+    for (const r of runs) {
+      if (r.automationId !== card.automationId || r.state === 'running') continue
+      const idx = bucketIndexOf(new Date(r.createdAt), from, unit, buckets.length)
       if (idx < 0) continue
       total[idx]++
-      if (j.State === 'Successful') ok[idx]++
+      if (r.state === 'success') ok[idx]++
     }
   } else {
-    for (const q of queueItemsForCard(card, queueItems, idsByName)) {
-      if (q.Status !== 'Successful' && q.Status !== 'Failed' && q.Status !== 'Retried' && q.Status !== 'Abandoned')
-        continue
-      const idx = bucketIndexOf(new Date(q.CreationTime), from, unit, buckets.length)
+    for (const t of txns) {
+      if (t.automationId !== card.automationId || t.outcome === 'pending') continue
+      const idx = bucketIndexOf(new Date(t.createdAt), from, unit, buckets.length)
       if (idx < 0) continue
       total[idx]++
-      // Correctly routed-out items count as correctly handled, as on the card.
-      if (q.Status === 'Successful' || q.ProcessingExceptionType === 'BusinessException') ok[idx]++
+      if (t.outcome !== 'failed') ok[idx]++
     }
   }
 
@@ -367,10 +251,6 @@ export function healthStrip(
 
 export function overallHealth(cards: StakeholderCard[]): { health: Health; affected: StakeholderCard[] } {
   const affected = cards.filter((c) => c.health !== 'ok')
-  const health: Health = affected.some((c) => c.health === 'critical')
-    ? 'critical'
-    : affected.length > 0
-      ? 'attention'
-      : 'ok'
+  const health: Health = affected.some((c) => c.health === 'critical') ? 'critical' : affected.length > 0 ? 'attention' : 'ok'
   return { health, affected }
 }

@@ -1,13 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [
     {
-      "source": "/orch/:path*",
-      "destination": "https://cloud.uipath.com/YOUR-ORG/YOUR-TENANT/orchestrator_/:path*"
-    },
-    {
-      "source": "/identity/:path*",
-      "destination": "https://cloud.uipath.com/identity_/:path*"
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
     }
   ]
 }

@@ -1,11 +1,7 @@
 import type { Health } from '@vbank/shared'
-
-export const HEALTH_COLORS: Record<Health, string> = {
-  ok: '#0ca30c',
-  attention: '#c98500',
-  critical: '#d03b3b',
-}
+import { useChartTheme } from './theme'
 
 export function HealthDot({ health }: { health: Health }) {
-  return <span className="health-dot" style={{ background: HEALTH_COLORS[health] }} />
+  const t = useChartTheme()
+  return <span className="health-dot" style={{ background: t.health[health] }} />
 }

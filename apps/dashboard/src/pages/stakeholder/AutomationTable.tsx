@@ -1,19 +1,6 @@
-import type { StakeholderCard, StripCell } from '@vbank/shared'
-import { deDateTime, deHours, deInt, dePct, HEALTH_LABELS_DE } from '@vbank/shared'
-import { DataTable, type Column } from '@vbank/ui'
-import { MiniBar } from '@vbank/ui'
-import { useChartTheme } from '@vbank/ui'
-import { HealthDot } from '@vbank/ui'
+import { deDateTime, deHours, deInt, dePct, HEALTH_LABELS_DE, HEALTH_SHORT_DE, type StakeholderCard, type StripCell } from '@vbank/shared'
+import { CategoryBadge, DataTable, HealthDot, MiniBar, useChartTheme, type Column } from '@vbank/ui'
 import { StatusStrip } from './StatusStrip'
-import { ResponsibilityBadge } from './Responsibility'
-
-// One-word status for phones, where "benötigt Aufmerksamkeit" would not fit
-// beside the name column. Swapped in by `.lbl-short` in global.css.
-const HEALTH_SHORT_DE: Record<StakeholderCard['health'], string> = {
-  ok: 'normal',
-  attention: 'auffällig',
-  critical: 'gestört',
-}
 
 /**
  * The one place to see what is happening: every automation is a row and every
@@ -91,7 +78,7 @@ export function AutomationTable({
       render: (r) =>
         isFinite(r.successRate) ? (
           <span className="tbl-metric">
-            <MiniBar fraction={r.successRate / 100} color={t.state.Successful} />
+            <MiniBar fraction={r.successRate / 100} color={t.ok} />
             {dePct(r.successRate)}
           </span>
         ) : (
@@ -101,9 +88,8 @@ export function AutomationTable({
     {
       key: 'owner',
       header: 'Zuständig',
-      sortValue: (r) => r.issueResponsibility ?? 'zzz',
-      render: (r) =>
-        r.issueResponsibility ? <ResponsibilityBadge who={r.issueResponsibility} /> : <span className="dim">–</span>,
+      sortValue: (r) => r.issueCategory ?? 'zzz',
+      render: (r) => (r.issueCategory ? <CategoryBadge category={r.issueCategory} /> : <span className="dim">–</span>),
     },
     {
       key: 'trend',
