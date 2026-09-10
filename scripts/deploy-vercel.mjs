@@ -41,4 +41,5 @@ writeFileSync(
   ),
 )
 run('npx vercel deploy --prebuilt --prod --yes --non-interactive', out)
-console.log('\nLive: https://vbank-dashboard-demo.vercel.app')
+console.log(`
+Live: ${p.url}`)
