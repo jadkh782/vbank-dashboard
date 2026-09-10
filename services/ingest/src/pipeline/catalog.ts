@@ -21,7 +21,8 @@ export interface Catalog {
   foldersWithQueues: Set<number>
 }
 
-export const processAutomationId = (folderName: string, releaseName: string) => `p:${folderName}/${releaseName}`
+// Folder DISPLAY names repeat across the tree (sub-folders), so the id carries the folder id.
+export const processAutomationId = (folderId: number, releaseName: string) => `p:${folderId}/${releaseName}`
 export const queueAutomationId = (queueDefinitionId: number) => `q:${queueDefinitionId}`
 
 export async function syncCatalog(): Promise<Catalog> {
@@ -35,7 +36,7 @@ export async function syncCatalog(): Promise<Catalog> {
     const [releases, queues] = await Promise.all([fetchReleases(f.Id), fetchQueueDefs(f.Id)])
     for (const r of releases) {
       rows.push({
-        id: processAutomationId(f.DisplayName, r.Name),
+        id: processAutomationId(f.Id, r.Name),
         kind: 'process',
         folder_id: f.Id,
         folder_name: f.DisplayName,
@@ -61,9 +62,14 @@ export async function syncCatalog(): Promise<Catalog> {
       })
     }
   })
-  await upsertAutomations(rows)
+  await upsertAutomations(dedupe(rows))
   log.info(`catalog: ${folders.length} folders, ${rows.filter((r) => r.kind === 'process').length} processes, ${rows.filter((r) => r.kind === 'queue').length} queues`)
   return indexCatalog(folders, await loadAutomations(), foldersWithQueues)
+}
+
+/** One row per id — the same release can appear twice in an Orchestrator listing. */
+function dedupe<T extends { id: string }>(rows: T[]): T[] {
+  return [...new Map(rows.map((r) => [r.id, r])).values()]
 }
 
 export function indexCatalog(folders: OrchFolder[], automations: AutomationRow[], foldersWithQueues: Set<number>): Catalog {
@@ -84,7 +90,7 @@ export async function ensureProcessAutomations(catalog: Catalog, missing: { fold
   const seen = new Set<string>()
   const rows: Omit<AutomationRow, 'included' | 'is_new'>[] = []
   for (const m of missing) {
-    const id = processAutomationId(m.folder.DisplayName, m.releaseName)
+    const id = processAutomationId(m.folder.Id, m.releaseName)
     if (seen.has(id) || catalog.byRelease.has(`${m.folder.Id}::${m.releaseName}`)) continue
     seen.add(id)
     rows.push({
