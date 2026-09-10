@@ -8,6 +8,7 @@ import { getToken } from '../orchestrator/http'
 import { countJobs, fetchFolders, fetchQueueDefs } from '../orchestrator/queries'
 import { probeSelectVariant } from '../orchestrator/select'
 import { syncCatalog } from '../pipeline/catalog'
+import { resuggestOpen } from '../pipeline/resuggest'
 import { runWindow, type RunResult } from './run'
 
 /** Yesterday and the lookback days, up to now. */
@@ -110,6 +111,8 @@ export async function serve(): Promise<never> {
           } else if (req.kind === 'catalog') {
             await runCatalog()
             result = { ok: true }
+          } else if (req.kind === 'resuggest') {
+            result = { ...(await resuggestOpen()) }
           } else result = { ignored: req.kind }
           await finishRequest(req.id, true, result)
         } catch (e) {

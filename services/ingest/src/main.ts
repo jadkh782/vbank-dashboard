@@ -4,12 +4,14 @@
 //   daily                      yesterday + lookback days, up to now
 //   backfill --from D [--to D] whole days in 7-day chunks (YYYY-MM-DD)
 //   import-workbook <xlsx> [--force] [--allow-mismatch]
+//   resuggest                  recompute suggestions for every open review item
 //   serve                      scheduler (daily at DAILY_AT Berlin) + request polling
 
 import { addDays, todayBerlin } from '@vbank/shared'
 import { log } from './log'
 import { closeHttp } from './orchestrator/http'
 import { runBackfill, runCatalog, runCheck, runDaily, serve } from './runs/commands'
+import { resuggestOpen } from './pipeline/resuggest'
 import { importWorkbook } from './tools/importWorkbook'
 
 const [cmd, ...rest] = process.argv.slice(2)
@@ -41,13 +43,17 @@ async function main(): Promise<number> {
       const path = rest.find((a) => !a.startsWith('--'))
       if (!path) throw new Error('import-workbook needs the xlsx path')
       await importWorkbook(path, { force: has('force'), allowMismatch: has('allow-mismatch') })
+      await resuggestOpen() // decisions from the workbook reach every open item
       return 0
     }
+    case 'resuggest':
+      await resuggestOpen()
+      return 0
     case 'serve':
       await serve()
       return 0
     default:
-      log.error(`unknown command "${cmd ?? ''}" — use check | catalog | daily | backfill | import-workbook | serve`)
+      log.error(`unknown command "${cmd ?? ''}" — use check | catalog | daily | backfill | import-workbook | resuggest | serve`)
       return 2
   }
 }

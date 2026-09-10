@@ -131,6 +131,9 @@ export function Einstellungen() {
             <button className="theme-toggle" disabled={pending || request.isPending} onClick={() => request.mutate({ kind: 'catalog' })}>
               Katalog aktualisieren
             </button>
+            <button className="theme-toggle" disabled={pending || request.isPending} onClick={() => request.mutate({ kind: 'resuggest' })} title="Vorschläge für alle offenen Punkte aus dem Fehlerkatalog neu berechnen">
+              Vorschläge aktualisieren
+            </button>
           </div>
           {request.error ? <div className="error-banner">{(request.error as Error).message}</div> : null}
           {(requests.data ?? []).slice(0, 3).map((r) => (

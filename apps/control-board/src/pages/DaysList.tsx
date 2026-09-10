@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { deDate, deDateTime, deInt } from '@vbank/shared'
 import { DataTable, type Column } from '@vbank/ui'
 import { DayStatusBadge } from '../components/Badges'
-import { useDays } from '../data/queries'
+import { useDays, useSettingsRow } from '../data/queries'
 import type { DayStats } from '../data/types'
 
 type Filter = 'alle' | 'offen' | 'veroeffentlicht'
@@ -14,14 +14,18 @@ type Filter = 'alle' | 'offen' | 'veroeffentlicht'
  */
 export function DaysList() {
   const days = useDays()
+  const settings = useSettingsRow()
   const nav = useNavigate()
   const [filter, setFilter] = useState<Filter>('alle')
 
   if (days.error) return <div className="error-banner">Tage konnten nicht geladen werden: {(days.error as Error).message}</div>
   if (!days.data) return <div className="state-block">Lade Tage…</div>
 
-  const open = days.data.filter((d) => d.state !== 'published').sort((a, b) => a.business_day.localeCompare(b.business_day))
-  const published = days.data.filter((d) => d.state === 'published')
+  // Days before go-live only hold chain ancestors from before the backfill window.
+  const goLive = settings.data?.go_live_day ?? '0000-00-00'
+  const relevant = days.data.filter((d) => d.business_day >= goLive)
+  const open = relevant.filter((d) => d.state !== 'published').sort((a, b) => a.business_day.localeCompare(b.business_day))
+  const published = relevant.filter((d) => d.state === 'published')
   const rows = filter === 'offen' ? open : filter === 'veroeffentlicht' ? published : [...open, ...published]
   const next = open[0]
 
