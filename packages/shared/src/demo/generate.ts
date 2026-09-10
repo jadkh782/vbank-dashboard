@@ -28,6 +28,8 @@ export const DEMO_FOLDERS = ['Kontoservice', 'Zahlungsverkehr', 'Handel', 'Repor
 
 interface DemoProcess {
   name: string
+  /** Display name as the Fachbereich calls it (the technical name stays the Orchestrator one). */
+  label: string
   folder: number
   /** Performerläufe 2026 (01.01.–11.08.) from the Prozessübersicht. */
   runs2026: number
@@ -46,37 +48,37 @@ const DAYS_2026 = 223
 
 const PROCESSES: DemoProcess[] = [
   // Reporting & Regulatorik
-  { name: 'A-10210-001-Kennzahlenberichte', folder: 3, runs2026: 376, durMin: 11, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-10320-001-BaisDownload', folder: 3, runs2026: 161, durMin: 6, failRate: 0.003, itemsPerRun: 0 },
-  { name: 'A-10320-002-BaisUpload', folder: 3, runs2026: 167, durMin: 7, failRate: 0.003, itemsPerRun: 0 },
-  { name: 'A-10601-001-Transaktionsstatistik', folder: 3, runs2026: 223, durMin: 9, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-30130-001-VerwaltungsberichtUpload', folder: 3, runs2026: 257, durMin: 8, failRate: 0.002, itemsPerRun: 10, humanMin: 6 },
+  { name: 'A-10210-001-Kennzahlenberichte', label: 'Kennzahlenberichte', folder: 3, runs2026: 376, durMin: 11, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-10320-001-BaisDownload', label: 'BAIS-Download', folder: 3, runs2026: 161, durMin: 6, failRate: 0.003, itemsPerRun: 0 },
+  { name: 'A-10320-002-BaisUpload', label: 'BAIS-Upload', folder: 3, runs2026: 167, durMin: 7, failRate: 0.003, itemsPerRun: 0 },
+  { name: 'A-10601-001-Transaktionsstatistik', label: 'Transaktionsstatistik', folder: 3, runs2026: 223, durMin: 9, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-30130-001-VerwaltungsberichtUpload', label: 'Verwaltungsbericht-Upload', folder: 3, runs2026: 257, durMin: 8, failRate: 0.002, itemsPerRun: 10, humanMin: 6 },
   // Kontoservice
-  { name: 'A-20201-001-Computershareübertragungskontrolle', folder: 0, runs2026: 214, durMin: 14, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20201-002-MoneyAccountKlassenänderungen', folder: 0, runs2026: 29, durMin: 5, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20201-005-InvestmentPolicyKlassenänderungen', folder: 0, runs2026: 51, durMin: 6, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20201-007-MoneyAccountKontraktänderungen', folder: 0, runs2026: 14, durMin: 5, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20201-008-Versandinstruktionen', folder: 0, runs2026: 731, durMin: 4, failRate: 0.003, itemsPerRun: 6, humanMin: 4 },
-  { name: 'A-20201-009-AccountingZinsabschluss', folder: 0, runs2026: 124, durMin: 22, failRate: 0.002, itemsPerRun: 20, humanMin: 3 },
-  { name: 'A-20201-010-InvestmentPolicyReferenzkonten', folder: 0, runs2026: 104, durMin: 7, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20201-013-PersonDokumente', folder: 0, runs2026: 1260, durMin: 5, failRate: 0.003, itemsPerRun: 8, humanMin: 5 },
-  { name: 'A-20201-014-PersonKlassenänderungen', folder: 0, runs2026: 69, durMin: 6, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20802-001-LeiVerlängerung', folder: 0, runs2026: 155, durMin: 9, failRate: 0.002, itemsPerRun: 6, humanMin: 8 },
-  { name: 'A-20802-002-LeiVerlängerungGebührenbuchung', folder: 0, runs2026: 163, durMin: 6, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-20803-003-ContainerEröffnungen', folder: 0, runs2026: 1246, durMin: 8, failRate: 0.004, itemsPerRun: 5, humanMin: 12 },
+  { name: 'A-20201-001-ComputershareÜbertragungskontrolle', label: 'Computershare-Übertragungskontrolle', folder: 0, runs2026: 214, durMin: 14, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-20201-002-MoneyAccountKlassenänderungen', label: 'Money-Account-Klassenänderungen', folder: 0, runs2026: 29, durMin: 5, failRate: 0.002, itemsPerRun: 3, humanMin: 6 },
+  { name: 'A-20201-005-InvestmentPolicyKlassenänderungen', label: 'Investment-Policy-Klassenänderungen', folder: 0, runs2026: 51, durMin: 6, failRate: 0.002, itemsPerRun: 4, humanMin: 6 },
+  { name: 'A-20201-007-MoneyAccountKontraktänderungen', label: 'Money-Account-Kontraktänderungen', folder: 0, runs2026: 14, durMin: 5, failRate: 0.002, itemsPerRun: 3, humanMin: 6 },
+  { name: 'A-20201-008-Versandinstruktionen', label: 'Versandinstruktionen', folder: 0, runs2026: 731, durMin: 4, failRate: 0.003, itemsPerRun: 6, humanMin: 4 },
+  { name: 'A-20201-009-AccountingZinsabschluss', label: 'Accounting-Zinsabschluss', folder: 0, runs2026: 124, durMin: 22, failRate: 0.002, itemsPerRun: 20, humanMin: 3 },
+  { name: 'A-20201-010-InvestmentPolicyReferenzkonten', label: 'Investment-Policy-Referenzkonten', folder: 0, runs2026: 104, durMin: 7, failRate: 0.002, itemsPerRun: 4, humanMin: 5 },
+  { name: 'A-20201-013-PersonDokumente', label: 'Person-Dokumente', folder: 0, runs2026: 1260, durMin: 5, failRate: 0.003, itemsPerRun: 8, humanMin: 5 },
+  { name: 'A-20201-014-PersonKlassenänderungen', label: 'Person-Klassenänderungen', folder: 0, runs2026: 69, durMin: 6, failRate: 0.002, itemsPerRun: 3, humanMin: 6 },
+  { name: 'A-20802-001-LeiVerlängerung', label: 'LEI-Verlängerung', folder: 0, runs2026: 155, durMin: 9, failRate: 0.002, itemsPerRun: 6, humanMin: 8 },
+  { name: 'A-20802-002-LeiVerlängerungGebührenbuchung', label: 'LEI-Verlängerung Gebührenbuchung', folder: 0, runs2026: 163, durMin: 6, failRate: 0.002, itemsPerRun: 4, humanMin: 3 },
+  { name: 'A-20803-003-ContainerEröffnungen', label: 'Container-Eröffnungen', folder: 0, runs2026: 1246, durMin: 8, failRate: 0.004, itemsPerRun: 5, humanMin: 12 },
   // Zahlungsverkehr
-  { name: 'A-20401-001-Daueraufträge', folder: 1, runs2026: 77, durMin: 6, failRate: 0.002, itemsPerRun: 4, humanMin: 5 },
-  { name: 'A-20401-002-Lastschriftmandate', folder: 1, runs2026: 328, durMin: 5, failRate: 0.002, itemsPerRun: 5, humanMin: 6 },
-  { name: 'A-20401-003-LastschriftmandatVerwaltungsgebühren', folder: 1, runs2026: 390, durMin: 10, failRate: 0.002, itemsPerRun: 15, humanMin: 2 },
-  { name: 'A-20401-006-LastschriftmandatLöschung', folder: 1, runs2026: 107, durMin: 4, failRate: 0.002, itemsPerRun: 4, humanMin: 3 },
-  { name: 'A-20401-008-ÜberweisungExtern', folder: 1, runs2026: 3187, durMin: 3, failRate: 0.003, itemsPerRun: 12, humanMin: 4 },
+  { name: 'A-20401-001-Daueraufträge', label: 'Daueraufträge', folder: 1, runs2026: 77, durMin: 6, failRate: 0.002, itemsPerRun: 4, humanMin: 5 },
+  { name: 'A-20401-002-Lastschriftmandate', label: 'Lastschriftmandate', folder: 1, runs2026: 328, durMin: 5, failRate: 0.002, itemsPerRun: 5, humanMin: 6 },
+  { name: 'A-20401-003-LastschriftmandatVerwaltungsgebühren', label: 'Lastschriftmandat Verwaltungsgebühren', folder: 1, runs2026: 390, durMin: 10, failRate: 0.002, itemsPerRun: 15, humanMin: 2 },
+  { name: 'A-20401-006-LastschriftmandatLöschung', label: 'Lastschriftmandat-Löschung', folder: 1, runs2026: 107, durMin: 4, failRate: 0.002, itemsPerRun: 4, humanMin: 3 },
+  { name: 'A-20401-008-ÜberweisungExtern', label: 'Überweisung extern', folder: 1, runs2026: 3187, durMin: 3, failRate: 0.003, itemsPerRun: 12, humanMin: 4 },
   // Firmen & Kredit
-  { name: 'A-20701-001-Jahresabschlussberichte', folder: 4, runs2026: 868, durMin: 16, failRate: 0.003, itemsPerRun: 4, humanMin: 25 },
-  { name: 'A-20701-002-KreditBerichte', folder: 4, runs2026: 257, durMin: 12, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-20701-001-Jahresabschlussberichte', label: 'Jahresabschlussberichte', folder: 4, runs2026: 868, durMin: 16, failRate: 0.003, itemsPerRun: 4, humanMin: 25 },
+  { name: 'A-20701-002-KreditBerichte', label: 'Kreditberichte', folder: 4, runs2026: 257, durMin: 12, failRate: 0.002, itemsPerRun: 0 },
   // Handel
-  { name: 'A-30201-001-InfrontVerfügungsrahmen', folder: 2, runs2026: 176, durMin: 7, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-30201-002-BörsenabrechnungNullpositionen', folder: 2, runs2026: 250, durMin: 9, failRate: 0.002, itemsPerRun: 0 },
-  { name: 'A-30201-004-AssignmentDaten', folder: 2, runs2026: 189, durMin: 8, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-30201-001-InfrontVerfügungsrahmen', label: 'Infront-Verfügungsrahmen', folder: 2, runs2026: 176, durMin: 7, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-30201-002-BörsenabrechnungNullpositionen', label: 'Börsenabrechnung Nullpositionen', folder: 2, runs2026: 250, durMin: 9, failRate: 0.002, itemsPerRun: 0 },
+  { name: 'A-30201-004-AssignmentDaten', label: 'Assignment-Daten', folder: 2, runs2026: 189, durMin: 8, failRate: 0.002, itemsPerRun: 0 },
 ]
 
 // Each message carries the category a reviewer would give it. The mix leans
@@ -143,7 +145,7 @@ export function demoAutomations(): Automation[] {
       kind: 'process',
       technicalName: p.name,
       folder: DEMO_FOLDERS[p.folder],
-      displayName: cleanName(p.name),
+      displayName: p.label,
       description: null,
       humanMinutesPerItem: null,
     })
@@ -153,22 +155,13 @@ export function demoAutomations(): Automation[] {
         kind: 'queue',
         technicalName: `${p.name}-Queue`,
         folder: DEMO_FOLDERS[p.folder],
-        displayName: `${cleanName(p.name)} Queue`,
+        displayName: `${p.label} – Vorgänge`,
         description: null,
         humanMinutesPerItem: p.humanMin ?? null,
       })
     }
   }
   return out
-}
-
-/** "A-20401-008-ÜberweisungExtern" → "Überweisung Extern" (same rule as health.autoCleanName). */
-function cleanName(technical: string): string {
-  return technical
-    .replace(/^[A-Z]-\d{5}-\d{3}-/, '')
-    .replace(/([a-zäöü])([A-ZÄÖÜ])/g, '$1 $2')
-    .replace(/([A-ZÄÖÜ]+)([A-ZÄÖÜ][a-zäöü])/g, '$1 $2')
-    .trim()
 }
 
 export interface DemoOptions {
@@ -239,14 +232,14 @@ export function generateDemoData(opts: DemoOptions): DashboardData {
           const endP = new Date(Math.min(startP.getTime() + 30_000 + rnd() * 150_000, end.getTime()))
           const pending = state === 'running' && startP.getTime() > to.getTime()
           const roll = rnd()
-          const isBiz = rnd() < 0.92
+          const isBiz = rnd() < 0.78
           let outcome: Txn['outcome'] = 'success'
           let attempts = 1
           let category: Category | null = null
           let family: string | null = null
           let processing = endP.getTime() - startP.getTime()
           if (pending) outcome = 'pending'
-          else if (roll < 0.044) {
+          else if (roll < 0.05) {
             if (isBiz) outcome = 'business_exception'
             else {
               const [msg, cat] = pick(rnd, APP_EXC)
