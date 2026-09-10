@@ -87,7 +87,9 @@ the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.c
    `dump_family_keys.py` from `Desktop/Vbank-Fehlerklassifizierung-daten.json`) — 2 075/2 075.
    `import-workbook` re-checks every variant against the workbook's Muster.
 5. Shell heredocs longer than ~200 lines get truncated in this environment; use the file tool.
-6. The Vercel CLI is not logged in on this PC; Vercel settings are changed in the web UI.
+6. Vercel CLI: `vercel login --non-interactive` prints a device code to approve in the browser
+   (interactive prompts hang in this shell). A static folder deploy still triggers `npm install`
+   on Vercel; use `--prebuilt` with a Build Output (`scripts/deploy-demo.mjs`).
 
 ## 6. Verification gates
 
@@ -101,9 +103,13 @@ the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.c
 
 1. Create the Supabase project (EU), `npx supabase link`, `npx supabase db push`
    (`supabase/README.md`); create users, insert `profiles` rows.
-2. Vercel: create **`vbank-dashboard-demo`** (Root Directory `apps/dashboard`, "Include source
-   files outside of Root Directory" on, env `VITE_DEMO_DEFAULT=true`) — this is the URL to
-   share. Point the production project at `apps/dashboard` too, with the Supabase keys.
+2. Vercel demo — **done Sep 10, 2026**: project `vbank-dashboard-demo`, deployed as a prebuilt
+   static build (no Git connection, nothing built on Vercel). Public URL to share:
+   **https://vbank-dashboard-demo.vercel.app**. Redeploy after changes with:
+   `npm run deploy:demo` (builds `apps/dashboard` with `VITE_DEMO_DEFAULT=true` and pushes the
+   Build Output; needs `npx vercel login` once per machine — device flow, approve in the browser).
+   The old `vbank-dashboard` project (v1 from `main`) can be deleted or left as is.
+   For the real dashboard, point a Vercel project at `apps/dashboard` with the Supabase keys.
 3. Merge `v2` → `main` **after** step 2 (Vercel builds from the root until the Root Directory
    changes). Tag `v2-monorepo`.
 4. Laptop: `services/ingest/.env`, `npm run ingest -- check` (records the select variant) →

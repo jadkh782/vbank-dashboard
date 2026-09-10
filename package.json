@@ -17,7 +17,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
     "ingest": "npm run ingest -w services/ingest --",
-    "serve": "npm run serve -w apps/dashboard"
+    "serve": "npm run serve -w apps/dashboard",
+    "deploy:demo": "node scripts/deploy-demo.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

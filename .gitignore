@@ -11,3 +11,6 @@ __pycache__/
 *.xlsx
 # Supabase CLI artefacts
 supabase/.temp/
+.vercel/
+.env.local
+.deploy-demo/
