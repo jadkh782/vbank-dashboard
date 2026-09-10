@@ -1,8 +1,7 @@
 # Handover – V-Bank Automatisierung (v2)
 
-State as of 9 Sep 2026, branch **`v2`**. Read this first in a new session. `main` still holds
-the old single SPA (tag `v1-spa-demo`) that the Vercel showcase runs in demo mode — leave it
-until the cut-over in §7.
+State as of 10 Sep 2026, branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
+no longer deployed anywhere). Read this first in a new session; §7 lists what is live.
 
 ## 1. What it is
 
@@ -99,26 +98,30 @@ the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.c
 - Dashboard in the browser (`?demo`): Datenstand in the header, presets end there, phone width
   shows name/status/volume/quality without horizontal scroll, drawer opens/closes with Esc.
 
-## 7. Cut-over (not done yet — main still serves the v1 showcase)
+## 7. Environments in place (Sep 10, 2026)
 
-1. Create the Supabase project (EU), `npx supabase link`, `npx supabase db push`
-   (`supabase/README.md`); create users, insert `profiles` rows.
-2. Vercel demo — **done Sep 10, 2026**: project `vbank-dashboard-demo`, deployed as a prebuilt
-   static build (no Git connection, nothing built on Vercel). Public URL to share:
-   **https://vbank-dashboard-demo.vercel.app**. Redeploy after changes with:
-   `npm run deploy:demo` (builds `apps/dashboard` with `VITE_DEMO_DEFAULT=true` and pushes the
-   Build Output; needs `npx vercel login` once per machine — device flow, approve in the browser).
-   The old `vbank-dashboard` project (v1 from `main`) can be deleted or left as is.
-   For the real dashboard, point a Vercel project at `apps/dashboard` with the Supabase keys.
-3. Merge `v2` → `main` **after** step 2 (Vercel builds from the root until the Root Directory
-   changes). Tag `v2-monorepo`.
-4. Laptop: `services/ingest/.env`, `npm run ingest -- check` (records the select variant) →
-   `catalog` → `import-workbook …_v2.xlsx` (once the meeting filled it) →
-   `backfill --from <today−90>` → Control Board: accept hoch/mittel suggestions, review the rest,
-   publish days in order → `ingest serve` under Task Scheduler (see `services/ingest/README.md`).
-   Serve the Control Board build on the laptop (`npm run build -w apps/control-board`, any static
-   server with SPA fallback, private port forward).
-5. Stop the old `npm run serve` tunnel.
+| What | Where | Notes |
+|---|---|---|
+| Supabase | project `VbankDashboard`, ref `icflpfjgkcbvmiusskrr`, eu-central-1 | migrations 0001–0004 applied via the Management API (`supabase login --token …`; the browser login flow needs a TTY). `settings.go_live_day = 2026-06-12`. |
+| Admin user | `rpaorch@exelentic.com`, role `admin` | initial password in `C:/Users/JadKhater/.supabase/vbank-admin-initial-password.txt` — change it after the first login. Add users under Authentication → Users plus a `profiles` row (see `supabase/README.md`). |
+| Real dashboard | **https://vbank-dashboard.vercel.app** | prebuilt static deploy (`npm run deploy:dashboard`), reads the Supabase project; shows "Noch keine Daten" until the first day is published. The Vercel project's Git integration is **disconnected** — pushes never rebuild it. |
+| Demo dashboard | **https://vbank-dashboard-demo.vercel.app** | `npm run deploy:demo`; no backend, no login. |
+| Control Board | `npm run dev:cb` → http://localhost:5174 (dev) or `npm run build -w apps/control-board` + any static server | reviewer/admin login; runs anywhere with outbound HTTPS to Supabase. |
+| Worker | `npm run ingest -- serve` | must run on a VPN machine (laptop: Task Scheduler at logon, see `services/ingest/README.md`). Daily 02:00 Berlin + "Jetzt abrufen" / "Vorschläge aktualisieren" / "Katalog aktualisieren" requests. |
+
+Backfill done: 2026-06-12 … 2026-09-10 (13 chunks), 6 748 runs, 11 443 transactions, 888 open
+review items (823 without suggestion until the workbook is imported), 187 recovered chains.
+Select variant on 22.10 is **base** (AncestorId + RetryNumber, no ManualAncestorId).
+
+### Next steps
+
+1. Fill the classification workbook (internal meeting) → `npm run ingest -- import-workbook <xlsx>`
+   (re-suggests all open items) → Control Board: "Vorschläge übernehmen", review the rest, publish
+   the days in order. Until then, decide families one by one in the Fehlerkatalog ("Neue
+   Zuordnung") and press "Vorschläge aktualisieren".
+2. Start the worker on the laptop (Task Scheduler). Without it there is no nightly fetch.
+3. Merge `v2` → `main` when convenient (nothing on Vercel depends on `main` any more).
+4. Later: Oracle VM, pgTAP smoke tests, `tools/seed-demo`.
 
 ## 8. Open items
 
