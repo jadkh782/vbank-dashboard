@@ -61,7 +61,8 @@ export async function fetchQueueItems(
 /** Specific items by id (chain ancestors outside the window, pending re-checks). */
 export async function fetchQueueItemsByIds(folderId: number, ids: number[], variant: SelectVariant): Promise<OrchQueueItem[]> {
   const out: OrchQueueItem[] = []
-  for (const batch of chunk(ids, 40)) {
+  // 22.10 rejects long `or` chains in $filter (400 "Ungültige OData-Abfrageoptionen"); 10 terms are safe.
+  for (const batch of chunk(ids, 10)) {
     const filter = batch.map((id) => `Id eq ${id}`).join(' or ')
     const res = await odata<ODataResponse<OrchQueueItem>>(`QueueItems?$filter=${filter}&$select=${QI_SELECT[variant]}&$top=${batch.length}`, folderId)
     out.push(...res.value)

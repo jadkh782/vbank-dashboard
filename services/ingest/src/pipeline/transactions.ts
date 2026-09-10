@@ -14,7 +14,13 @@ export function toTransactionRows(build: ChainBuild, catalog: Catalog): Transact
     if (!automation) continue
     const outcome = chainOutcome(c.final)
     const kind = reviewKind(c.final)
-    const reasonRaw = outcome === 'failed' || outcome === 'business_exception' ? c.final.reason ?? lastFailureReason(c) : lastFailureReason(c)
+    // A failed/abandoned item without an exception text is still a failure
+    // (Orchestrator abandons items after the max retry age); give it a reason
+    // so it gets a family and a review item — same wording as v1.
+    const reasonRaw =
+      outcome === 'failed' || outcome === 'business_exception'
+        ? c.final.reason ?? lastFailureReason(c) ?? `${c.final.status} without exception reason`
+        : lastFailureReason(c)
     const reasonNorm = reasonRaw ? normalizeMessage(reasonRaw) : null
     rows.push({
       id: c.rootId,
@@ -31,7 +37,7 @@ export function toTransactionRows(build: ChainBuild, catalog: Catalog): Transact
       reason_raw: reasonRaw,
       reason_norm: reasonNorm,
       family_key: reasonNorm ? familyKey(reasonNorm, kind) : null,
-      kind: reasonNorm ? kind : null,
+      kind: outcome === 'failed' || outcome === 'business_exception' || reasonNorm ? kind : null,
       outcome,
       processing_ms: processingMs(c),
       updated_at: nowIso,

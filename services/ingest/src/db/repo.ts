@@ -56,8 +56,11 @@ export async function loadReviewItems(txIds: number[], jobIds: number[]): Promis
   const b = jobIds.length ? await selectIn<ReviewItemRow>('review_items', '*', 'job_id', jobIds) : []
   return [...a, ...b]
 }
-export const upsertReviewItemsByTx = (rows: ReviewItemRow[]) => upsertChunked('review_items', rows, 'transaction_id')
-export const upsertReviewItemsByJob = (rows: ReviewItemRow[]) => upsertChunked('review_items', rows, 'job_id')
+// The unique link column is the conflict target; `id` is never sent — a batch
+// mixing rows with and without an id would otherwise insert NULL ids.
+const withoutId = (rows: ReviewItemRow[]) => rows.map(({ id: _id, ...r }) => r)
+export const upsertReviewItemsByTx = (rows: ReviewItemRow[]) => upsertChunked('review_items', withoutId(rows), 'transaction_id')
+export const upsertReviewItemsByJob = (rows: ReviewItemRow[]) => upsertChunked('review_items', withoutId(rows), 'job_id')
 export async function deleteReviewItems(ids: number[]): Promise<void> {
   if (ids.length === 0) return
   check(await db().from('review_items').delete().in('id', ids), 'delete review items')
