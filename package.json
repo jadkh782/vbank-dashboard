@@ -18,7 +18,8 @@
     "test": "vitest run",
     "ingest": "npm run ingest -w services/ingest --",
     "serve": "npm run serve -w apps/dashboard",
-    "deploy:demo": "node scripts/deploy-demo.mjs"
+    "deploy:demo": "node scripts/deploy-vercel.mjs demo",
+    "deploy:dashboard": "node scripts/deploy-vercel.mjs dashboard"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

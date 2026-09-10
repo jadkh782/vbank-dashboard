@@ -1,13 +1,20 @@
-// Build the dashboard in demo mode and deploy it as a prebuilt static site to
-// the Vercel project `vbank-dashboard-demo` (public showcase, no backend).
-//   npm run deploy:demo         (needs `npx vercel login` once per machine)
+// Build the dashboard and deploy it as a prebuilt static site to Vercel.
+//   npm run deploy:demo        demo mode (VITE_DEMO_DEFAULT=true) → vbank-dashboard-demo
+//   npm run deploy:dashboard   real mode (Supabase from apps/dashboard/.env) → vbank-dashboard
+// Needs `npx vercel login` once per machine. Nothing is built on Vercel.
 import { execSync } from 'node:child_process'
 import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+const target = process.argv[2] === 'dashboard' ? 'dashboard' : 'demo'
+const PROJECTS = {
+  demo: { projectId: 'prj_Cz1zPz9hpFAA6nkZwymtRo0sglqk', projectName: 'vbank-dashboard-demo', url: 'https://vbank-dashboard-demo.vercel.app', demo: 'true' },
+  dashboard: { projectId: 'prj_okFceoLCY4kOSahKMRUqjACJiGTY', projectName: 'vbank-dashboard', url: 'https://vbank-dashboard.vercel.app', demo: '' },
+}
+const p = PROJECTS[target]
 const app = join(process.cwd(), 'apps', 'dashboard')
 const out = join(process.cwd(), '.deploy-demo')
-const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, VITE_DEMO_DEFAULT: 'true' } })
+const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, VITE_DEMO_DEFAULT: p.demo } })
 
 run('npx vite build', app)
 rmSync(out, { recursive: true, force: true })
@@ -16,7 +23,7 @@ cpSync(join(app, 'dist'), join(out, '.vercel', 'output', 'static'), { recursive:
 rmSync(join(out, '.vercel', 'output', 'static', 'vercel.json'), { force: true })
 writeFileSync(
   join(out, '.vercel', 'project.json'),
-  JSON.stringify({ projectId: 'prj_Cz1zPz9hpFAA6nkZwymtRo0sglqk', orgId: 'team_BZb58BfUPR0jThpvoTfljbRP', projectName: 'vbank-dashboard-demo' }),
+  JSON.stringify({ projectId: p.projectId, orgId: 'team_BZb58BfUPR0jThpvoTfljbRP', projectName: p.projectName }),
 )
 writeFileSync(
   join(out, '.vercel', 'output', 'config.json'),
