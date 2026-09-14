@@ -10,7 +10,7 @@ An npm-workspaces monorepo with three deliverables and two shared packages:
 | Path | What | Where it runs |
 |---|---|---|
 | `apps/dashboard` | **Statusbericht** — the public stakeholder dashboard (German). Reads **published days only** from Supabase, or demo data. Login via Supabase Auth. | Vercel |
-| `apps/control-board` | **Control Board** — internal review app (German). Every failed transaction and faulted run is categorised by a person; days are published as a queue. | VPN laptop (static build) |
+| `apps/control-board` | **Control Board** — internal review app (German). Every failed transaction and faulted run is categorised by a person; days are published as a queue. | Vercel (login-gated) |
 | `services/ingest` | Worker: UiPath Orchestrator → Supabase, daily at 02:00 Berlin + on-demand. The only component that talks to Orchestrator. | VPN laptop (`ingest serve`) |
 | `packages/shared` | Pure TS: domain types, six categories (+ validated colours), aggregates, `normalizeMessage`, `familyKey` (Python-parity), `suggest`, retry-chain collapse, Berlin-day helpers, demo generator. | — |
 | `packages/ui` | React primitives (DataTable, StatTile, ChartKit, Drawer, badges, theme) and the design-system CSS (tokens, base, chrome, forms, drawer). | — |
@@ -106,7 +106,7 @@ the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.c
 | Admin user | `rpaorch@exelentic.com`, role `admin` | initial password in `C:/Users/JadKhater/.supabase/vbank-admin-initial-password.txt` — change it after the first login. Add users under Authentication → Users plus a `profiles` row (see `supabase/README.md`). |
 | Real dashboard | **https://vbank-dashboard.vercel.app** | prebuilt static deploy (`npm run deploy:dashboard`), reads the Supabase project; shows "Noch keine Daten" until the first day is published. The Vercel project's Git integration is **disconnected** — pushes never rebuild it. |
 | Demo dashboard | **https://vbank-dashboard-demo.vercel.app** | `npm run deploy:demo`; no backend, no login. |
-| Control Board | `npm run dev:cb` → http://localhost:5174 (dev) or `npm run build -w apps/control-board` + any static server | reviewer/admin login; runs anywhere with outbound HTTPS to Supabase. |
+| Control Board | **https://vbank-control-board.vercel.app** | prebuilt static deploy (`npm run deploy:control-board`), same Supabase project; only reviewer/admin logins get past the login wall (RLS enforces it server-side too). It never talks to Orchestrator, so it needs no VPN. Strict VPN-only gating (IP allowlist) is not available on Vercel's free tier — the login is the gate. |
 | Worker | `npm run ingest -- serve` | must run on a VPN machine (laptop: Task Scheduler at logon, see `services/ingest/README.md`). Daily 02:00 Berlin + "Jetzt abrufen" / "Vorschläge aktualisieren" / "Katalog aktualisieren" requests. |
 
 Backfill done: 2026-06-12 … 2026-09-10 (13 chunks), 6 748 runs, 11 443 transactions, 888 open
