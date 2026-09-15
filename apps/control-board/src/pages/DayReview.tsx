@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { berlinDayEnd, CATEGORY_LABELS_DE, deDate, deDateTime, deInt } from '@vbank/shared'
 import { CategoryBadge, DataTable, type Column } from '@vbank/ui'
 import { CategorySelect, ConfidenceBadge, DayStatusBadge, ReviewStatusBadge } from '../components/Badges'
-import { displayNameOf, useDayReview, useDays } from '../data/queries'
+import { displayNameOf, useDayReview, useDays, useSettingsRow } from '../data/queries'
 import { useConfirmItems, usePublishDay, useSetCategory, useUnpublishDay } from '../data/mutations'
 import type { ReviewRow } from '../data/types'
 import { ReviewDrawer } from './ReviewDrawer'
@@ -11,6 +11,7 @@ import { ReviewDrawer } from './ReviewDrawer'
 export function DayReview() {
   const { day } = useParams<{ day: string }>()
   const days = useDays()
+  const settings = useSettingsRow()
   const review = useDayReview(day)
   const confirm = useConfirmItems()
   const setCategory = useSetCategory()
@@ -49,7 +50,12 @@ export function DayReview() {
 
   const fetchedComplete = !!stats?.fetched_through && day !== undefined && new Date(stats.fetched_through) >= berlinDayEnd(day)
   const canPublish = !!stats && !frozen && openRows.length === 0 && fetchedComplete
-  const earlierOpen = (days.data ?? []).some((d) => d.state !== 'published' && day !== undefined && d.business_day < day)
+  // Same queue rule as publish_day(): only days since go-live count. Earlier days
+  // exist only as homes for chain ancestors from before the backfill window.
+  const goLive = settings.data?.go_live_day ?? '0000-00-00'
+  const earlierOpen = (days.data ?? []).some(
+    (d) => d.state !== 'published' && day !== undefined && d.business_day < day && d.business_day >= goLive,
+  )
 
   const columns: Column<ReviewRow>[] = [
     { key: 'time', header: 'Zeit', sortValue: (r) => r.time, render: (r) => <span className="dim">{r.time ? deDateTime(r.time) : '–'}</span> },
