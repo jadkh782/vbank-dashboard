@@ -17,3 +17,4 @@ supabase/.temp/
 
 # worker log (scheduled task)
 logs/
+.deploy-vercel/

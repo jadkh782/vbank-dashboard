@@ -13,7 +13,7 @@ import { join } from 'node:path'
 const TARGETS = {
   demo: { app: 'apps/dashboard', projectName: 'vbank-dashboard-demo', projectId: 'prj_Cz1zPz9hpFAA6nkZwymtRo0sglqk', url: 'https://vbank-dashboard-demo.vercel.app', env: { VITE_DEMO_DEFAULT: 'true' } },
   dashboard: { app: 'apps/dashboard', projectName: 'vbank-dashboard', projectId: 'prj_okFceoLCY4kOSahKMRUqjACJiGTY', url: 'https://vbank-dashboard.vercel.app', env: { VITE_DEMO_DEFAULT: '' } },
-  'control-board': { app: 'apps/control-board', projectName: 'vbank-control-board', projectId: '', url: 'https://vbank-control-board.vercel.app', env: {} },
+  'control-board': { app: 'apps/control-board', projectName: 'vbank-control-board', projectId: 'prj_6BSLCTAMFVj22JnNlt082ECouA09', url: 'https://vbank-control-board.vercel.app', env: {} },
 }
 const ORG_ID = 'team_BZb58BfUPR0jThpvoTfljbRP'
 
