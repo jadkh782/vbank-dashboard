@@ -12,6 +12,8 @@ npm run ingest -w services/ingest -- import-workbook "C:/…/Vbank-Fehlerklassif
 npm run ingest -w services/ingest -- backfill --from 2026-06-11 --to 2026-09-08
 npm run ingest -w services/ingest -- daily
 npm run ingest -w services/ingest -- serve             # scheduler + "Jetzt abrufen" requests
+npm run ingest -w services/ingest -- once              # single shot: queued requests + daily if due, then exit
+npm run ingest -w services/ingest -- resuggest         # recompute suggestions for all open review items
 ```
 
 ## How a run works
@@ -43,6 +45,12 @@ npm run ingest -w services/ingest -- serve             # scheduler + "Jetzt abru
 
 ## Windows service (laptop)
 
-Task Scheduler → *Create Task*: trigger "At log on", action `cmd /c npm run ingest -w services/ingest -- serve`,
-start in the repo folder, "Run whether user is logged on or not", restart on failure. On the
-Oracle VM a systemd unit does the same.
+`scripts/laptop/Install-Worker.ps1` registers the scheduled task **"V-Bank Ingest Worker"**
+(at startup + 2 min, `cmd /c npm run ingest -- serve >> logs\ingest.log`, restart on failure, no
+time limit, S4U principal so nobody has to stay logged in); `-NoSleep` also disables sleep,
+hibernate and the lid action. `scripts/laptop/Update-Worker.ps1` pulls, installs and restarts.
+Step-by-step guide: `docs/LAPTOP-SETUP.md`. On a Linux VM a systemd unit does the same.
+
+**Catch-up**: when the machine was off, the next `daily` stretches its window back to the day
+before the last successful run (`ingest_state.last_*_ok`, capped at 14 days), so short outages
+need no manual backfill. Longer gaps: `backfill --from …`.

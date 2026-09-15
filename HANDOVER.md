@@ -1,6 +1,6 @@
 # Handover – V-Bank Automatisierung (v2)
 
-State as of 10 Sep 2026, branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
+State as of 15 Sep 2026, branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
 no longer deployed anywhere). Read this first in a new session; §7 lists what is live.
 
 ## 1. What it is
@@ -53,7 +53,7 @@ npm run ingest -- <cmd>           # worker CLI, see services/ingest/README.md
 ```
 
 Ingest commands: `check` · `catalog` · `daily` · `backfill --from YYYY-MM-DD [--to …]` ·
-`import-workbook <xlsx> [--force] [--allow-mismatch]` · `serve`.
+`import-workbook <xlsx> [--force] [--allow-mismatch]` · `resuggest` · `once` · `serve`.
 
 Demo: `?demo` on any dashboard URL, or `VITE_DEMO_DEFAULT=true` at build time (the
 `vbank-dashboard-demo` Vercel project). No login, no database, 90 days of generated data up to
@@ -107,7 +107,7 @@ the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.c
 | Real dashboard | **https://vbank-dashboard.vercel.app** | prebuilt static deploy (`npm run deploy:dashboard`), reads the Supabase project; shows "Noch keine Daten" until the first day is published. The Vercel project's Git integration is **disconnected** — pushes never rebuild it. |
 | Demo dashboard | **https://vbank-dashboard-demo.vercel.app** | `npm run deploy:demo`; no backend, no login. |
 | Control Board | **https://vbank-control-board.vercel.app** | prebuilt static deploy (`npm run deploy:control-board`), same Supabase project; only reviewer/admin logins get past the login wall (RLS enforces it server-side too). It never talks to Orchestrator, so it needs no VPN. Strict VPN-only gating (IP allowlist) is not available on Vercel's free tier — the login is the gate. |
-| Worker | `npm run ingest -- serve` | must run on a VPN machine (laptop: Task Scheduler at logon, see `services/ingest/README.md`). Daily 02:00 Berlin + "Jetzt abrufen" / "Vorschläge aktualisieren" / "Katalog aktualisieren" requests. |
+| Worker | `npm run ingest -- serve` on the VPN laptop | the only VPN component. Install once with `scripts/laptop/Install-Worker.ps1` (scheduled task at startup, see **`docs/LAPTOP-SETUP.md`**). Daily 02:00 Berlin, auto catch-up after downtime (≤14 days), "Jetzt abrufen" / "Vorschläge aktualisieren" / "Katalog aktualisieren" requests. Not running since Sep 10 17:45 → days 2026-09-10 … today need `backfill` on the laptop. |
 
 Backfill done: 2026-06-12 … 2026-09-10 (13 chunks), 6 748 runs, 11 443 transactions, 888 open
 review items (823 without suggestion until the workbook is imported), 187 recovered chains.
@@ -119,7 +119,9 @@ Select variant on 22.10 is **base** (AncestorId + RetryNumber, no ManualAncestor
    (re-suggests all open items) → Control Board: "Vorschläge übernehmen", review the rest, publish
    the days in order. Until then, decide families one by one in the Fehlerkatalog ("Neue
    Zuordnung") and press "Vorschläge aktualisieren".
-2. Start the worker on the laptop (Task Scheduler). Without it there is no nightly fetch.
+2. Set up the worker laptop per `docs/LAPTOP-SETUP.md` (Barracuda auto-connect → Node 22 + Git → clone
+   `v2` to `C:bank` → copy `services/ingest/.env` → `check` → `backfill --from 2026-09-10` →
+   `Install-Worker.ps1 -NoSleep`). Without it there is no nightly fetch.
 3. Merge `v2` → `main` when convenient (nothing on Vercel depends on `main` any more).
 4. Later: Oracle VM, pgTAP smoke tests, `tools/seed-demo`.
 

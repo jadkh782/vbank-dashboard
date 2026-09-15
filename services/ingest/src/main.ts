@@ -5,12 +5,13 @@
 //   backfill --from D [--to D] whole days in 7-day chunks (YYYY-MM-DD)
 //   import-workbook <xlsx> [--force] [--allow-mismatch]
 //   resuggest                  recompute suggestions for every open review item
+//   once                       single shot for Task Scheduler: requests + daily if due, then exit
 //   serve                      scheduler (daily at DAILY_AT Berlin) + request polling
 
 import { addDays, todayBerlin } from '@vbank/shared'
 import { log } from './log'
 import { closeHttp } from './orchestrator/http'
-import { runBackfill, runCatalog, runCheck, runDaily, serve } from './runs/commands'
+import { runBackfill, runCatalog, runCheck, runDaily, runOnce, serve } from './runs/commands'
 import { resuggestOpen } from './pipeline/resuggest'
 import { importWorkbook } from './tools/importWorkbook'
 
@@ -49,11 +50,14 @@ async function main(): Promise<number> {
     case 'resuggest':
       await resuggestOpen()
       return 0
+    case 'once':
+      await runOnce()
+      return 0
     case 'serve':
       await serve()
       return 0
     default:
-      log.error(`unknown command "${cmd ?? ''}" — use check | catalog | daily | backfill | import-workbook | resuggest | serve`)
+      log.error(`unknown command "${cmd ?? ''}" — use check | catalog | daily | backfill | import-workbook | resuggest | once | serve`)
       return 2
   }
 }

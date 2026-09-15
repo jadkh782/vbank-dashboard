@@ -14,3 +14,6 @@ supabase/.temp/
 .vercel/
 .env.local
 .deploy-demo/
+
+# worker log (scheduled task)
+logs/
