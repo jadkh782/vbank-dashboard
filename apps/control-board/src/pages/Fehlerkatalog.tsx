@@ -1,24 +1,33 @@
 import { useMemo, useState } from 'react'
-import { deDateTime, deInt, familyKey, normalizeMessage, type Category, type ErrorKind } from '@vbank/shared'
+import { deDate, deDateTime, deInt, familyKey, normalizeMessage, type Category, type ErrorKind } from '@vbank/shared'
 import { CategoryBadge, DataTable, type Column } from '@vbank/ui'
 import { CategorySelect } from '../components/Badges'
-import { useMappingFamilies, useMappingMessages } from '../data/queries'
-import { useDeleteFamilyMapping, useUpsertFamilyMapping, useUpsertMessageMapping } from '../data/mutations'
+import { displayNameOf, useAutomationRows, useMappingFamilies, useMappingMessages } from '../data/queries'
+import { useOpenFamilies, type OpenFamily } from '../data/openFamilies'
+import { useDeleteFamilyMapping, useRequestIngest, useUpsertFamilyMapping, useUpsertMessageMapping } from '../data/mutations'
 import type { MappingFamilyRow, MappingMessageRow } from '../data/types'
 
 const KIND_LABELS: Record<ErrorKind, string> = { job: 'Prozessabbruch', app: 'Systemausnahme', biz: 'Business Exception' }
 
 const mixed = (counts: Record<string, number>) => Object.values(counts).filter((n) => n > 0).length > 1
 
-/** The learned mapping: which message / family means which category. */
+type Tab = 'offen' | 'familien' | 'meldungen'
+
+/** The learned mapping: which message / family means which category — and what still needs one. */
 export function Fehlerkatalog() {
-  const [tab, setTab] = useState<'familien' | 'meldungen'>('familien')
+  const [tab, setTab] = useState<Tab>('offen')
   const [search, setSearch] = useState('')
   const families = useMappingFamilies()
   const messages = useMappingMessages()
+  const automations = useAutomationRows()
+  const open = useOpenFamilies(families.data)
   const upsertFamily = useUpsertFamilyMapping()
   const deleteFamily = useDeleteFamilyMapping()
   const upsertMessage = useUpsertMessageMapping()
+  const request = useRequestIngest()
+  // Assignments made since the last "Vorschläge aktualisieren": one request covers them all.
+  const [assigned, setAssigned] = useState(0)
+  const [requested, setRequested] = useState(false)
 
   // new mapping form
   const [raw, setRaw] = useState('')
@@ -28,8 +37,49 @@ export function Fehlerkatalog() {
   const key = norm ? familyKey(norm, kind) : ''
 
   const s = search.trim().toLowerCase()
+  const openRows = useMemo(() => (open.data ?? []).filter((r) => !s || r.family_key.includes(s) || r.example.toLowerCase().includes(s)), [open.data, s])
   const famRows = useMemo(() => (families.data ?? []).filter((r) => !s || r.family_key.includes(s)), [families.data, s])
   const msgRows = useMemo(() => (messages.data ?? []).filter((r) => !s || r.message_norm.toLowerCase().includes(s)), [messages.data, s])
+  const nameOf = (id: string) => displayNameOf(automations.data?.find((a) => a.id === id))
+
+  const assign = (r: OpenFamily, c: Category) => {
+    upsertFamily.mutate({ kind: r.kind, family_key: r.family_key, category: c })
+    upsertMessage.mutate({ kind: r.kind, message_norm: r.example, category: c })
+    setAssigned((n) => n + 1)
+    setRequested(false)
+  }
+  const openItemCount = (open.data ?? []).reduce((a, r) => a + r.count, 0)
+
+  const openCols: Column<OpenFamily>[] = [
+    { key: 'n', header: 'Fälle', numeric: true, sortValue: (r) => r.count, render: (r) => <b>{deInt(r.count)}</b> },
+    { key: 'kind', header: 'Art', sortValue: (r) => r.kind, render: (r) => <span className="dim">{KIND_LABELS[r.kind]}</span> },
+    {
+      key: 'msg',
+      header: 'Ursache (normalisiert)',
+      render: (r) => (
+        <>
+          <span className="msg" title={r.example}>
+            {r.example}
+          </span>
+          <div className="dim family-key" title={r.family_key}>
+            Familie: {r.family_key}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: 'auto',
+      header: 'Automatisierungen',
+      sortValue: (r) => r.automations.length,
+      render: (r) => (
+        <span className="dim" title={r.automations.map(nameOf).join(', ')}>
+          {r.automations.length === 1 ? nameOf(r.automations[0]) : `${deInt(r.automations.length)} verschiedene`}
+        </span>
+      ),
+    },
+    { key: 'last', header: 'Zuletzt', sortValue: (r) => r.lastDay, render: (r) => <span className="dim">{deDate(r.lastDay)}</span> },
+    { key: 'cat', header: 'Kategorie', render: (r) => <CategorySelect value={null} onChange={(c) => assign(r, c)} /> },
+  ]
 
   const famCols: Column<MappingFamilyRow>[] = [
     { key: 'kind', header: 'Art', sortValue: (r) => r.kind, render: (r) => <span className="dim">{KIND_LABELS[r.kind]}</span> },
@@ -75,6 +125,8 @@ export function Fehlerkatalog() {
     { key: 'n', header: 'Entscheidungen', numeric: true, sortValue: (r) => r.decided_count, render: (r) => deInt(r.decided_count) },
   ]
 
+  const error = (open.error ?? families.error ?? upsertFamily.error ?? upsertMessage.error ?? request.error) as Error | null | undefined
+
   return (
     <>
       <div className="stake-section-head">
@@ -82,11 +134,14 @@ export function Fehlerkatalog() {
           <span className="section-eyebrow">
             <b>Fehlerkatalog</b>
           </span>
-          <h2 className="stake-section-title">Gelernte Zuordnungen</h2>
+          <h2 className="stake-section-title">{tab === 'offen' ? 'Ursachen ohne Zuordnung' : 'Gelernte Zuordnungen'}</h2>
         </div>
         <div className="stake-controls">
           <input className="search" placeholder="Suchen…" value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="seg">
+            <button className={tab === 'offen' ? 'active' : undefined} onClick={() => setTab('offen')}>
+              Ohne Zuordnung ({deInt(open.data?.length ?? 0)})
+            </button>
             <button className={tab === 'familien' ? 'active' : undefined} onClick={() => setTab('familien')}>
               Familien ({deInt(families.data?.length ?? 0)})
             </button>
@@ -97,8 +152,37 @@ export function Fehlerkatalog() {
         </div>
       </div>
 
+      {error ? <div className="error-banner">{error.message}</div> : null}
+
+      {assigned > 0 ? (
+        <div className="notice catalog-notice">
+          <span>
+            <b>{deInt(assigned)}</b> neue {assigned === 1 ? 'Zuordnung' : 'Zuordnungen'} gespeichert. Die offenen Punkte bekommen den Vorschlag erst, wenn der Worker sie neu
+            berechnet.
+          </span>
+          <button className="btn-primary" disabled={request.isPending || requested} onClick={() => request.mutateAsync({ kind: 'resuggest' }).then(() => setRequested(true))}>
+            {requested ? 'Angefordert — läuft im Hintergrund' : 'Vorschläge jetzt aktualisieren'}
+          </button>
+        </div>
+      ) : null}
+
       <div className="card">
-        {tab === 'familien' ? (
+        {tab === 'offen' ? (
+          <>
+            <DataTable
+              columns={openCols}
+              rows={openRows}
+              rowKey={(r) => `${r.kind}::${r.family_key}`}
+              emptyText={open.isLoading ? 'Lade offene Punkte…' : 'Jede Ursache der offenen Punkte ist im Katalog zugeordnet.'}
+              initialSort={{ key: 'n', dir: 'desc' }}
+              maxRows={300}
+            />
+            <div className="card-sub" style={{ marginTop: 8 }}>
+              {deInt(openItemCount)} offene Punkte in {deInt(open.data?.length ?? 0)} Ursachen. Eine Kategorie wählen legt die Familie und die Meldung im Katalog an; Prozessabbrüche zeigen die
+              Ursache aus dem Roboter-Protokoll.
+            </div>
+          </>
+        ) : tab === 'familien' ? (
           <DataTable columns={famCols} rows={famRows} rowKey={(r) => `${r.kind}::${r.family_key}`} emptyText="Noch keine Familien — Arbeitsmappe importieren oder Punkte bestätigen." initialSort={{ key: 'n', dir: 'desc' }} maxRows={300} />
         ) : (
           <DataTable columns={msgCols} rows={msgRows} rowKey={(r) => `${r.kind}::${r.message_norm}`} emptyText="Noch keine Meldungen." initialSort={{ key: 'n', dir: 'desc' }} maxRows={300} />
@@ -149,6 +233,8 @@ export function Fehlerkatalog() {
             if (!cat) return
             upsertFamily.mutate({ kind, family_key: key, category: cat })
             upsertMessage.mutate({ kind, message_norm: norm, category: cat })
+            setAssigned((n) => n + 1)
+            setRequested(false)
             setRaw('')
           }}
         >

@@ -579,3 +579,21 @@
     gap: 2px;
   }
 }
+
+/* ── Fehlerkatalog: open causes ──────────────────────────────────────────── */
+.family-key {
+  margin-top: 2px;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.catalog-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
