@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { berlinDayEnd, CATEGORY_LABELS_DE, deDate, deDateTime, deInt } from '@vbank/shared'
 import { CategoryBadge, DataTable, type Column } from '@vbank/ui'
@@ -29,6 +29,10 @@ export function DayReview() {
   const infoRows = rows.filter((r) => r.status === 'info')
   const withSuggestion = openRows.filter((r) => r.suggested_category)
 
+  // Card order is decided once per day (most open first when the day opens) and
+  // then frozen: confirming an item must not move its card. Automations that
+  // appear later (late ingest) are appended at the end.
+  const order = useRef<{ day: string | undefined; ids: string[] }>({ day: undefined, ids: [] })
   const groups = useMemo(() => {
     const m = new Map<string, ReviewRow[]>()
     for (const r of rows) {
@@ -36,8 +40,13 @@ export function DayReview() {
       const k = r.automation_id
       ;(m.get(k) ?? m.set(k, []).get(k)!).push(r)
     }
-    return [...m.entries()].sort((a, b) => b[1].filter((x) => x.status === 'open').length - a[1].filter((x) => x.status === 'open').length)
-  }, [rows])
+    if (order.current.day !== day) order.current = { day, ids: [] }
+    const known = new Set(order.current.ids)
+    const openCount = (id: string) => m.get(id)!.filter((x) => x.status === 'open').length
+    const fresh = [...m.keys()].filter((k) => !known.has(k)).sort((a, b) => openCount(b) - openCount(a))
+    if (fresh.length > 0) order.current.ids = [...order.current.ids, ...fresh]
+    return order.current.ids.filter((k) => m.has(k)).map((k) => [k, m.get(k)!] as const)
+  }, [rows, day])
 
   const act = async (fn: () => Promise<unknown>) => {
     setError(null)
