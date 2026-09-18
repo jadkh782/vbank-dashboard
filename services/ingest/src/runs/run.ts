@@ -9,6 +9,7 @@ import type { JobRow } from '../db/rows'
 import { probeSelectVariant, type SelectVariant } from '../orchestrator/select'
 import type { OrchFolder, OrchJob } from '../orchestrator/types'
 import { ensureProcessAutomations, syncCatalog, type Catalog } from '../pipeline/catalog'
+import { enrichFaultedJobs } from '../pipeline/jobLogs'
 import { buildChains, toQueueItemRows, type BatchItem } from '../pipeline/chains'
 import { refreshPending } from '../pipeline/pending'
 import { syncReviewItems } from '../pipeline/review'
@@ -52,6 +53,9 @@ function toJobRows(catalog: Catalog, jobs: { folder: OrchFolder; job: OrchJob }[
       info,
       info_norm: norm,
       family_key: norm ? familyKey(norm, 'job') : null,
+      log_lines: null,
+      cause: null,
+      log_fetched_at: null,
       business_day: berlinDay(job.CreationTime),
       updated_at: nowIso,
     })
@@ -76,6 +80,7 @@ export async function runWindow(kind: string, from: Date, to: Date): Promise<Run
       fetched.jobs.filter((j) => !catalog.byRelease.has(`${j.folder.Id}::${j.job.ReleaseName}`)).map((j) => ({ folder: j.folder, releaseName: j.job.ReleaseName })),
     )
     const jobRows = toJobRows(catalog, fetched.jobs)
+    await enrichFaultedJobs(jobRows) // robot logs → cause → info_norm for generic faults
     await upsertJobs(jobRows)
 
     // queue items → chains → transactions

@@ -1,6 +1,6 @@
 # Handover – V-Bank Automatisierung (v2)
 
-State as of 18 Sep 2026, branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
+State as of 18 Sep 2026 (robot logs added the same day), branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
 no longer deployed anywhere). Read this first in a new session; §7 lists what is live.
 
 ## 1. What it is
@@ -14,7 +14,7 @@ An npm-workspaces monorepo with three deliverables and two shared packages:
 | `services/ingest` | Worker: UiPath Orchestrator → Supabase, daily at 02:00 Berlin + on-demand. The only component that talks to Orchestrator. | VPN laptop (`ingest serve`) |
 | `packages/shared` | Pure TS: domain types, six categories (+ validated colours), aggregates, `normalizeMessage`, `familyKey` (Python-parity), `suggest`, retry-chain collapse, Berlin-day helpers, demo generator. | — |
 | `packages/ui` | React primitives (DataTable, StatTile, ChartKit, Drawer, badges, theme) and the design-system CSS (tokens, base, chrome, forms, drawer). | — |
-| `supabase/migrations` | 0001 schema · 0002 RLS · 0003 published views + RPCs · 0004 triggers. | Supabase (EU) |
+| `supabase/migrations` | 0001 schema · 0002 RLS · 0003 published views + RPCs · 0004 triggers · 0005 robot-log columns on jobs. | Supabase (EU) |
 | `tools/classification` | Python workbook builder (`build_xlsx.py`, `family.py` = oracle for `familyKey`, `dump_family_keys.py`). | dev machine |
 
 **The customer never sees the Control Board.** The dashboard shows "Datenstand: <letzter
@@ -60,7 +60,7 @@ npm run ingest -- <cmd>           # worker CLI, see services/ingest/README.md
 ```
 
 Ingest commands: `check` · `catalog` · `daily` · `backfill --from YYYY-MM-DD [--to …]` ·
-`import-workbook <xlsx> [--force] [--allow-mismatch]` · `resuggest` · `once` · `serve`.
+`import-workbook <xlsx> [--force] [--allow-mismatch]` · `resuggest` · `logs --from …` · `once` · `serve`.
 
 Demo: `?demo` on any dashboard URL, or `VITE_DEMO_DEFAULT=true` at build time (the
 `vbank-dashboard-demo` Vercel project). No login, no database, 90 days of generated data up to
@@ -93,7 +93,13 @@ the VM). Orchestrator facts: standalone **22.10** at `https://asvbank17.v-bank.c
    `dump_family_keys.py` from `Desktop/Vbank-Fehlerklassifizierung-daten.json`) — 2 075/2 075.
    `import-workbook` re-checks every variant against the workbook's Muster.
 5. Shell heredocs longer than ~200 lines get truncated in this environment; use the file tool.
-6. Vercel CLI: `vercel login --non-interactive` prints a device code to approve in the browser
+6. Faulted REFramework jobs carry only "All transaction items failed / Initialization failed
+   3 times … Please check log messages!" in `Info`. The cause is in the robot log → the worker
+   fetches Error/Fatal `RobotLogs` per faulted job (`pipeline/jobLogs.ts`), stores them on the
+   job and classifies on the first specific line. Migrations are applied through the Management
+   API (`POST /v1/projects/<ref>/database/query`, PAT in `~/.supabase/vbank-management-token.txt`,
+   `User-Agent: curl/…` or Cloudflare answers 403).
+7. Vercel CLI: `vercel login --non-interactive` prints a device code to approve in the browser
    (interactive prompts hang in this shell). A static folder deploy still triggers `npm install`
    on Vercel; use `--prebuilt` with a Build Output (`scripts/deploy-demo.mjs`).
 

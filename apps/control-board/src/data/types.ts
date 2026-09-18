@@ -87,6 +87,9 @@ export interface JobRow {
   info: string | null
   info_norm: string | null
   family_key: string | null
+  log_lines: { t: string; level: string; message: string }[] | null
+  cause: string | null
+  log_fetched_at: string | null
 }
 
 export interface QueueItemRow {

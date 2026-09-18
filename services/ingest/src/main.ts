@@ -13,6 +13,7 @@ import { log } from './log'
 import { closeHttp } from './orchestrator/http'
 import { runBackfill, runCatalog, runCheck, runDaily, runOnce, serve } from './runs/commands'
 import { resuggestOpen } from './pipeline/resuggest'
+import { backfillJobLogs } from './pipeline/jobLogs'
 import { importWorkbook } from './tools/importWorkbook'
 
 const [cmd, ...rest] = process.argv.slice(2)
@@ -50,6 +51,14 @@ async function main(): Promise<number> {
     case 'resuggest':
       await resuggestOpen()
       return 0
+    case 'logs': {
+      // Robot logs for faulted jobs that have none yet (one-off after upgrading, or after a retention gap)
+      const from = flag('from')
+      if (!from) throw new Error('logs needs --from YYYY-MM-DD')
+      await backfillJobLogs(from, flag('to') ?? addDays(todayBerlin(), 0))
+      await resuggestOpen() // open job items now carry the real cause
+      return 0
+    }
     case 'once':
       await runOnce()
       return 0
@@ -57,7 +66,7 @@ async function main(): Promise<number> {
       await serve()
       return 0
     default:
-      log.error(`unknown command "${cmd ?? ''}" — use check | catalog | daily | backfill | import-workbook | resuggest | once | serve`)
+      log.error(`unknown command "${cmd ?? ''}" — use check | catalog | daily | backfill | import-workbook | resuggest | logs | once | serve`)
       return 2
   }
 }

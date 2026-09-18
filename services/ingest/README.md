@@ -14,6 +14,7 @@ npm run ingest -w services/ingest -- daily
 npm run ingest -w services/ingest -- serve             # scheduler + "Jetzt abrufen" requests
 npm run ingest -w services/ingest -- once              # single shot: queued requests + daily if due, then exit
 npm run ingest -w services/ingest -- resuggest         # recompute suggestions for all open review items
+npm run ingest -w services/ingest -- logs --from YYYY-MM-DD [--to …]   # robot logs for faulted jobs that have none yet
 ```
 
 ## How a run works
@@ -42,6 +43,17 @@ npm run ingest -w services/ingest -- resuggest         # recompute suggestions f
 `daily` covers `[start of (today − LOOKBACK_DAYS), now]`. `serve` runs it at `DAILY_AT`
 (Europe/Berlin) and retries every 30 minutes until 08:00 when Orchestrator is unreachable
 (typical symptom: a 403 HTML page from the public gateway = VPN down).
+
+## Robot logs for faulted runs
+
+REFramework processes end with a summary ("All transaction items failed … Please check log
+messages!", "Initialization failed 3 times") and Orchestrator stores only that in `Job.Info`.
+Every run therefore fetches the Error/Fatal robot log lines of each new faulted job
+(`RobotLogs?$filter=JobKey eq … and (Level eq 'Error' or Level eq 'Fatal')`, one request per
+faulted job) into `jobs.log_lines`; the first specific line becomes `jobs.cause` and, when the
+Info is generic, drives `info_norm`/`family_key` so suggestions and the Fehlerkatalog work on
+the real message. Logs are fetched once per job; `logs --from …` fills history (jobs older than
+Orchestrator's log retention end up with `log_lines = []`).
 
 ## Windows service (laptop)
 

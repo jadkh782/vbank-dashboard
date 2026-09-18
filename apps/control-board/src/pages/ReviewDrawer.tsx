@@ -6,6 +6,9 @@ import { displayNameOf, useChainAttempts } from '../data/queries'
 import { useReopenItem, useSaveNote, useSetCategory } from '../data/mutations'
 import type { ReviewRow } from '../data/types'
 
+/** The log line the worker picked as the cause (same normalisation as pipeline/jobLogs.ts). */
+const isCause = (message: string, cause: string | null): boolean => !!cause && message.split('\n')[0].trim().replace(/^throw:?\s*-?\s*/i, '') === cause
+
 /** Everything about one item: every attempt with its raw exception text, and the decision. */
 export function ReviewDrawer({
   row,
@@ -126,7 +129,34 @@ export function ReviewDrawer({
                   {row.job.host_machine ?? ''} · {row.job.start_time ? deDateTime(row.job.start_time) : '–'} – {row.job.end_time ? deDateTime(row.job.end_time) : '–'}
                 </span>
               </div>
-              <pre className="attempt-block">{row.job.info ?? '(keine Fehlerdetails)'}</pre>
+              {row.job.cause ? (
+                <div className="job-cause">
+                  <span className="dim">Ursache laut Roboter-Protokoll:</span> {row.job.cause}
+                </div>
+              ) : null}
+              {row.job.log_lines && row.job.log_lines.length > 0 ? (
+                <ol className="log-lines">
+                  {row.job.log_lines.map((l, i) => (
+                    <li key={i} className={isCause(l.message, row.job!.cause) ? 'is-cause' : undefined}>
+                      <span className="dim">{deDateTime(l.t)}</span>
+                      <span className={`log-level ${l.level.toLowerCase()}`}>{l.level}</span>
+                      <span className="log-msg">{l.message}</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : row.job.log_fetched_at ? (
+                <div className="dim" style={{ margin: '6px 0' }}>
+                  Kein Roboter-Protokoll mehr im Orchestrator (Aufbewahrungsfrist).
+                </div>
+              ) : (
+                <div className="dim" style={{ margin: '6px 0' }}>
+                  Roboter-Protokoll wird mit dem nächsten Abruf geladen.
+                </div>
+              )}
+              <details className="job-info">
+                <summary className="dim">Meldung des Prozesses und Stacktrace</summary>
+                <pre className="attempt-block">{row.job.info ?? '(keine Fehlerdetails)'}</pre>
+              </details>
             </div>
           </section>
         ) : null}

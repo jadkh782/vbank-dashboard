@@ -26,6 +26,12 @@ export interface AutomationRow {
   last_seen?: string
 }
 
+export interface LogLine {
+  t: string
+  level: string
+  message: string
+}
+
 export interface JobRow {
   id: number
   key: string | null
@@ -41,6 +47,11 @@ export interface JobRow {
   info: string | null
   info_norm: string | null
   family_key: string | null
+  /** Error/Fatal robot log lines of a faulted job (see pipeline/jobLogs.ts). */
+  log_lines: LogLine[] | null
+  /** First specific log message; drives info_norm when the Info is generic. */
+  cause: string | null
+  log_fetched_at: string | null
   business_day: string
   updated_at: string
 }
