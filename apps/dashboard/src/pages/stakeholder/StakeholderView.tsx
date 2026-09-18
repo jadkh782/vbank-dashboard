@@ -110,18 +110,20 @@ export function StakeholderView() {
 
   const visibleCards = cardFilter === 'auffaellig' ? allCards.filter((c) => c.health !== 'ok') : allCards
 
-  const failedNeustart = txns.filter((x) => x.outcome === 'failed' && x.category === 'neustartfaehig').length
+  // Restartable failures are neutral: listed as open points, but neither
+  // "nicht erfolgreich" nor a reason for "gestört" (see isRestartable).
   const outcomeSlices = [
     { label: 'Erfolgreich', value: qk.success + qk.ignored, color: t.outcome.erfolgreich },
     { label: 'Korrekt erkannte Aussteuerung', value: qk.businessExceptions, color: t.outcome.aussteuerung },
-    { label: 'Nicht erfolgreich', value: qk.failed - failedNeustart, color: t.outcome.nichtErfolgreich },
-    { label: 'Neustartfähige Vorgänge', value: failedNeustart, color: t.outcome.neustart },
+    { label: 'Nicht erfolgreich', value: qk.failed, color: t.outcome.nichtErfolgreich },
+    { label: 'Neustartfähige Vorgänge', value: qk.restartable, color: t.outcome.neustart },
   ]
 
   const volume = volumeOverTime(txns, from, to)
   const verlaufSeries = [
     { key: 'Korrekt verarbeitet', color: t.outcome.erfolgreich },
     { key: 'Nicht erfolgreich', color: t.outcome.nichtErfolgreich },
+    { key: 'Neustartfähig', color: t.outcome.neustart },
   ]
   const matrix = activityMatrix(txns)
 
@@ -242,6 +244,12 @@ export function StakeholderView() {
               <div className="cat-note">
                 <b>{deInt(qk.recovered)}</b> Vorgänge wurden nach einem Neustart erfolgreich abgeschlossen — sie zählen als korrekt
                 verarbeitet.
+              </div>
+            ) : null}
+            {qk.restartable > 0 ? (
+              <div className="cat-note">
+                <b>{deInt(qk.restartable)}</b> neustartfähige Vorgänge sind als offene Punkte gelistet, beeinflussen den Status einer
+                Automatisierung aber nicht.
               </div>
             ) : null}
             {groups.length > 0 ? (

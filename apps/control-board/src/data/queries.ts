@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { autoCleanName } from '@vbank/shared'
 import { supabase } from '../auth/supabase'
 import type {
   AutomationRow,
@@ -42,7 +41,8 @@ async function selectIn<T>(table: string, columns: string, col: string, values: 
   return out
 }
 
-export const displayNameOf = (a: AutomationRow | undefined) => a?.display_name?.trim() || (a ? autoCleanName(a.technical_name) : '–')
+/** Display name if set, otherwise the Orchestrator name verbatim (the bank knows those). */
+export const displayNameOf = (a: AutomationRow | undefined) => a?.display_name?.trim() || a?.technical_name || '–'
 
 // ── Days ────────────────────────────────────────────────────────────────────
 export function useDays() {

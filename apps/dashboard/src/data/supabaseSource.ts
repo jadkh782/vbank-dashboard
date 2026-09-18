@@ -1,5 +1,5 @@
 import type { Automation, Category, ManualErrorRow, Run, Txn } from '@vbank/shared'
-import { autoCleanName, berlinDayEnd, berlinDayStart } from '@vbank/shared'
+import { berlinDayEnd, berlinDayStart } from '@vbank/shared'
 import { supabase } from '../auth/supabase'
 import type { DataSource, WindowRows } from './source'
 
@@ -82,7 +82,8 @@ export function supabaseSource(): DataSource {
         kind: r.kind,
         technicalName: r.technical_name,
         folder: r.folder,
-        displayName: r.display_name?.trim() || autoCleanName(r.technical_name),
+        // The Orchestrator name is what the bank's people know; a display name only overrides it when set.
+        displayName: r.display_name?.trim() || r.technical_name,
         description: r.description?.trim() || null,
         humanMinutesPerItem: r.human_minutes_per_item,
       }))

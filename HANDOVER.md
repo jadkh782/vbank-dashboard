@@ -1,6 +1,6 @@
 # Handover – V-Bank Automatisierung (v2)
 
-State as of 15 Sep 2026, branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
+State as of 18 Sep 2026, branch **`v2`** (not yet merged; `main` = old v1 SPA, tag `v1-spa-demo`,
 no longer deployed anywhere). Read this first in a new session; §7 lists what is live.
 
 ## 1. What it is
@@ -31,6 +31,13 @@ Orchestrator. Grep gates in §6 keep it that way.
   Berlin day of its **first** attempt. Retried-then-successful = **one success** (shown as
   "Nach Neustart erfolgreich"). An orphan `Retried` is pending, never a failure.
 - **Business exceptions** = "Korrekt erkannte Aussteuerung", counted as correct.
+- **Neustartfähig is neutral** (customer feedback Sep 18, 2026): a failure reviewed as
+  "Neustartfähiger Vorgang" stays an open point but sits outside the correct/failed ratio —
+  it never makes an automation "gestört" and is its own series in the Verlauf chart
+  (`isRestartable` / `isRestartableRun` in `aggregate.ts`).
+- **Names** (same feedback): the dashboard shows the **Orchestrator name verbatim** unless a
+  display name is set; the one-or-two-sentence description is written in the Control Board
+  (Automatisierungen → click a row) and appears under the name in the table and in the drawer.
 - **Review**: everything open must be confirmed by a person (bulk "Vorschläge übernehmen" counts).
   Suggestions: recovered → Neustartfähig · business → nicht anzeigen · exact normalised message
   mapping · family mapping · keyword fallback (V-Bank IT, low) · none → "ohne Vorschlag".

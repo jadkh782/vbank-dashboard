@@ -8,6 +8,15 @@ import { buildBuckets, bucketIndexOf } from './dates'
 
 // ── Window splitting ────────────────────────────────────────────────────────
 
+/**
+ * "Neustartfähiger Vorgang" is neutral: the failure is real and stays an open
+ * point, but nobody is to blame and the automation is not "gestört" because of
+ * it. Restartable failures therefore sit outside the correct/failed ratio that
+ * drives health and the "Korrekt verarbeitet" figures — like pending ones.
+ */
+export const isRestartable = (t: Pick<Txn, 'outcome' | 'category'>): boolean => t.outcome === 'failed' && t.category === 'neustartfaehig'
+export const isRestartableRun = (r: Pick<Run, 'state' | 'category'>): boolean => r.state === 'faulted' && r.category === 'neustartfaehig'
+
 export function inWindow<T>(items: T[], timeOf: (t: T) => string, from: Date, to: Date): T[] {
   const f = from.getTime()
   const t = to.getTime()
@@ -30,7 +39,9 @@ export interface RunKpis {
   faulted: number
   stopped: number
   running: number
-  /** % of finished runs that succeeded. */
+  /** Faulted runs reviewed as "Neustartfähig" — neutral, not in `faulted` or the rate. */
+  restartable: number
+  /** % of finished runs that succeeded (restartable faults left out). */
   successRate: number
   runtimeMs: number
 }
@@ -40,9 +51,11 @@ export function runKpis(runs: Run[]): RunKpis {
   let faulted = 0
   let stopped = 0
   let running = 0
+  let restartable = 0
   let runtimeMs = 0
   for (const r of runs) {
     if (r.state === 'success') success++
+    else if (isRestartableRun(r)) restartable++
     else if (r.state === 'faulted') faulted++
     else if (r.state === 'stopped') stopped++
     else running++
@@ -53,7 +66,7 @@ export function runKpis(runs: Run[]): RunKpis {
     }
   }
   const finished = success + faulted + stopped
-  return { total: runs.length, success, faulted, stopped, running, successRate: finished > 0 ? (success / finished) * 100 : NaN, runtimeMs }
+  return { total: runs.length, success, faulted, stopped, running, restartable, successRate: finished > 0 ? (success / finished) * 100 : NaN, runtimeMs }
 }
 
 // ── Queue transactions ──────────────────────────────────────────────────────
@@ -63,7 +76,10 @@ export interface TxnKpis {
   success: number
   businessExceptions: number
   ignored: number
+  /** Failed and not reviewed as "Neustartfähig". */
   failed: number
+  /** Failed but reviewed as "Neustartfähig" — neutral, outside `processed`. */
+  restartable: number
   pending: number
   /** Successful transactions that needed more than one attempt. */
   recovered: number
@@ -83,6 +99,7 @@ export function txnKpis(txns: Txn[]): TxnKpis {
     businessExceptions: 0,
     ignored: 0,
     failed: 0,
+    restartable: 0,
     pending: 0,
     recovered: 0,
     correct: 0,
@@ -103,7 +120,8 @@ export function txnKpis(txns: Txn[]): TxnKpis {
         k.ignored++
         break
       case 'failed':
-        k.failed++
+        if (isRestartable(t)) k.restartable++
+        else k.failed++
         break
       default:
         k.pending++
@@ -131,17 +149,19 @@ export interface VolumePoint {
   start: Date
   'Korrekt verarbeitet': number
   'Nicht erfolgreich': number
+  Neustartfähig: number
   [series: string]: string | number | Date
 }
 
-/** Transactions per bucket: correct vs. failed (pending left out). */
+/** Transactions per bucket: correct vs. failed vs. restartable (pending left out). */
 export function volumeOverTime(txns: Txn[], from: Date, to: Date) {
   const { unit, buckets } = buildBuckets(from, to)
-  const rows: VolumePoint[] = buckets.map((b) => ({ label: b.label, start: b.start, 'Korrekt verarbeitet': 0, 'Nicht erfolgreich': 0 }))
+  const rows: VolumePoint[] = buckets.map((b) => ({ label: b.label, start: b.start, 'Korrekt verarbeitet': 0, 'Nicht erfolgreich': 0, Neustartfähig: 0 }))
   for (const t of txns) {
     const idx = bucketIndexOf(new Date(t.createdAt), from, unit, rows.length)
     if (idx < 0) continue
-    if (t.outcome === 'failed') rows[idx]['Nicht erfolgreich']++
+    if (isRestartable(t)) rows[idx].Neustartfähig++
+    else if (t.outcome === 'failed') rows[idx]['Nicht erfolgreich']++
     else if (t.outcome !== 'pending') rows[idx]['Korrekt verarbeitet']++
   }
   return { unit, rows }
@@ -156,7 +176,9 @@ export interface ScorecardRow {
   folder: string
   items: number
   correct: number
+  /** Failed, not counting restartable ones. */
   failed: number
+  restartable: number
   byCategory: Partial<Record<Category, number>>
   /** Manual IT incidents attached to this automation. */
   manual: number
@@ -177,6 +199,7 @@ export function scorecard(automations: Automation[], txns: Txn[], manual: Manual
       items: 0,
       correct: 0,
       failed: 0,
+      restartable: 0,
       byCategory: {},
       manual: 0,
       botHours: 0,
@@ -188,7 +211,8 @@ export function scorecard(automations: Automation[], txns: Txn[], manual: Manual
     if (!r) continue
     r.items++
     if (t.outcome === 'failed') {
-      r.failed++
+      if (isRestartable(t)) r.restartable++
+      else r.failed++
       if (t.category) r.byCategory[t.category] = (r.byCategory[t.category] ?? 0) + 1
     } else if (t.outcome !== 'pending') r.correct++
     if (t.processingMs) r.botHours += t.processingMs / 3600_000

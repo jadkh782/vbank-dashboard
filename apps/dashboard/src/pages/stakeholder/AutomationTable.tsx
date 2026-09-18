@@ -27,6 +27,7 @@ export function AutomationTable({
       render: (r) => (
         <>
           <span className="primary">{r.displayName}</span>
+          {r.description ? <div className="tbl-desc">{r.description}</div> : null}
           <div className="dim">{r.area}</div>
         </>
       ),

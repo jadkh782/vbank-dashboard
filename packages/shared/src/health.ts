@@ -6,6 +6,7 @@ import type { Automation, ManualErrorRow, Run, Thresholds, Txn } from './domain'
 import type { IssueGroup } from './issues'
 import { ISSUE_KIND_LABELS_DE } from './issues'
 import { buildBuckets, bucketIndexOf, type Bucket } from './dates'
+import { isRestartable, isRestartableRun } from './aggregate'
 
 export type Health = 'ok' | 'attention' | 'critical'
 
@@ -119,7 +120,8 @@ export function buildStakeholderCards(
       let runtimeMs = 0
       let last: string | null = null
       for (const r of rs) {
-        if (r.state !== 'running') {
+        // Restartable faults are neutral for health (see isRestartable).
+        if (r.state !== 'running' && !isRestartableRun(r)) {
           fin++
           if (r.state === 'success') ok++
         }
@@ -160,7 +162,9 @@ export function buildStakeholderCards(
       let processingMs = 0
       let last: string | null = null
       for (const t of ts) {
-        if (t.outcome === 'failed') failed++
+        if (isRestartable(t)) {
+          // neutral: counted in `count`, not in the ratio
+        } else if (t.outcome === 'failed') failed++
         else if (t.outcome !== 'pending') {
           correct++
           if (t.outcome === 'success' && t.attempts > 1) recovered++
@@ -220,7 +224,7 @@ export function healthStrip(card: StakeholderCard, runs: Run[], txns: Txn[], fro
 
   if (card.kind === 'process') {
     for (const r of runs) {
-      if (r.automationId !== card.automationId || r.state === 'running') continue
+      if (r.automationId !== card.automationId || r.state === 'running' || isRestartableRun(r)) continue
       const idx = bucketIndexOf(new Date(r.createdAt), from, unit, buckets.length)
       if (idx < 0) continue
       total[idx]++
@@ -228,7 +232,7 @@ export function healthStrip(card: StakeholderCard, runs: Run[], txns: Txn[], fro
     }
   } else {
     for (const t of txns) {
-      if (t.automationId !== card.automationId || t.outcome === 'pending') continue
+      if (t.automationId !== card.automationId || t.outcome === 'pending' || isRestartable(t)) continue
       const idx = bucketIndexOf(new Date(t.createdAt), from, unit, buckets.length)
       if (idx < 0) continue
       total[idx]++
