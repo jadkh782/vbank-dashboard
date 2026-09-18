@@ -19,6 +19,8 @@ export interface AutomationRow {
   process_key?: string | null
   version?: string | null
   description?: string | null
+  /** Only written by the catalogue when it follows the Orchestrator text (see catalog.ts). */
+  display_description?: string | null
   included: boolean
   is_new: boolean
   last_seen?: string

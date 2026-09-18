@@ -114,7 +114,7 @@ export function Automatisierungen() {
           initialSort={{ key: 'name', dir: 'asc' }}
         />
         <div className="card-sub" style={{ marginTop: 8 }}>
-          Zeile anklicken, um Beschreibung und Anzeigename zu bearbeiten. Der Statusbericht zeigt den Orchestrator-Namen, solange kein Anzeigename gesetzt ist.
+          Zeile anklicken, um Beschreibung und Anzeigename zu bearbeiten. Der Statusbericht zeigt den Orchestrator-Namen und die Orchestrator-Beschreibung, solange nichts Eigenes gesetzt ist.
         </div>
       </div>
       {current ? <AutomationEditor row={current} onClose={() => setEditing(null)} /> : null}
@@ -208,12 +208,18 @@ function AutomationEditor({ row, onClose }: { row: AutomationRow; onClose: () =>
             </span>
           </label>
           {row.description?.trim() ? (
-            <div className="editor-hint">
-              <span className="dim">Beschreibung im Orchestrator:</span> {row.description}
-              <button className="theme-toggle" style={{ marginLeft: 8 }} onClick={() => setDesc(row.description!.slice(0, DESC_MAX))}>
-                Übernehmen
-              </button>
-            </div>
+            desc.trim() === row.description.trim() ? (
+              <div className="editor-hint">
+                <span className="dim">Aus dem Orchestrator übernommen.</span> Eigener Text ersetzt ihn dauerhaft; leer lassen folgt wieder dem Orchestrator.
+              </div>
+            ) : (
+              <div className="editor-hint">
+                <span className="dim">Beschreibung im Orchestrator:</span> {row.description}
+                <button className="theme-toggle" style={{ marginLeft: 8 }} onClick={() => setDesc(row.description!.slice(0, DESC_MAX))}>
+                  Übernehmen
+                </button>
+              </div>
+            )
           ) : null}
         </section>
 

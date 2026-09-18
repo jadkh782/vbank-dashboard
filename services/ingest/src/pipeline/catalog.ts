@@ -2,6 +2,10 @@
 // New automations start included (is_new = true so the Control Board shows a
 // "neu" badge); decisions made there (included, display names, human minutes)
 // are never overwritten because the upsert only carries catalogue columns.
+//
+// Descriptions: the Statusbericht text (`display_description`) follows the
+// Orchestrator description until a person writes their own in the Control
+// Board. "Own" = differs from the Orchestrator text the row carried so far.
 
 import { config } from '../config'
 import { log, pooled } from '../log'
@@ -62,7 +66,20 @@ export async function syncCatalog(): Promise<Catalog> {
       })
     }
   })
-  await upsertAutomations(dedupe(rows))
+  const existing = new Map((await loadAutomations()).map((a) => [a.id, a]))
+  const deduped = dedupe(rows)
+  let followed = 0
+  for (const r of deduped) {
+    const orchText = r.description?.trim() || null
+    const before = existing.get(r.id)
+    const untouched = !before || !before.display_description?.trim() || before.display_description.trim() === (before.description?.trim() || null)
+    if (orchText && untouched && before?.display_description?.trim() !== orchText) {
+      r.display_description = orchText
+      followed++
+    }
+  }
+  await upsertAutomations(deduped)
+  if (followed > 0) log.info(`catalog: ${followed} descriptions taken from Orchestrator`)
   log.info(`catalog: ${folders.length} folders, ${rows.filter((r) => r.kind === 'process').length} processes, ${rows.filter((r) => r.kind === 'queue').length} queues`)
   return indexCatalog(folders, await loadAutomations(), foldersWithQueues)
 }
