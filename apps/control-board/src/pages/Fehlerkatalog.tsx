@@ -6,6 +6,10 @@ import { displayNameOf, useAutomationRows, useMappingFamilies, useMappingMessage
 import { useOpenFamilies, type OpenFamily } from '../data/openFamilies'
 import { useDeleteFamilyMapping, useRequestIngest, useUpsertFamilyMapping, useUpsertMessageMapping } from '../data/mutations'
 import type { MappingFamilyRow, MappingMessageRow } from '../data/types'
+import { FamilyDrawer } from './FamilyDrawer'
+
+/** What is open in the drawer: a row of one of the three tabs. */
+type Opened = { tab: 'offen'; row: OpenFamily } | { tab: 'familien'; row: MappingFamilyRow } | { tab: 'meldungen'; row: MappingMessageRow }
 
 const KIND_LABELS: Record<ErrorKind, string> = { job: 'Prozessabbruch', app: 'Systemausnahme', biz: 'Business Exception' }
 
@@ -28,6 +32,7 @@ export function Fehlerkatalog() {
   // Assignments made since the last "Vorschläge aktualisieren": one request covers them all.
   const [assigned, setAssigned] = useState(0)
   const [requested, setRequested] = useState(false)
+  const [opened, setOpened] = useState<Opened | null>(null)
 
   // new mapping form
   const [raw, setRaw] = useState('')
@@ -78,7 +83,15 @@ export function Fehlerkatalog() {
       ),
     },
     { key: 'last', header: 'Zuletzt', sortValue: (r) => r.lastDay, render: (r) => <span className="dim">{deDate(r.lastDay)}</span> },
-    { key: 'cat', header: 'Kategorie', render: (r) => <CategorySelect value={null} onChange={(c) => assign(r, c)} /> },
+    {
+      key: 'cat',
+      header: 'Kategorie',
+      render: (r) => (
+        <span className="suggestion" onClick={(e) => e.stopPropagation()}>
+          <CategorySelect value={null} onChange={(c) => assign(r, c)} />
+        </span>
+      ),
+    },
   ]
 
   const famCols: Column<MappingFamilyRow>[] = [
@@ -88,7 +101,7 @@ export function Fehlerkatalog() {
       key: 'cat',
       header: 'Kategorie',
       render: (r) => (
-        <span className="suggestion">
+        <span className="suggestion" onClick={(e) => e.stopPropagation()}>
           <CategorySelect value={r.category} onChange={(c) => upsertFamily.mutate({ kind: r.kind, family_key: r.family_key, category: c })} />
           {mixed(r.category_counts) ? <span className="conf conf-niedrig" title={JSON.stringify(r.category_counts)}>uneinheitlich</span> : null}
         </span>
@@ -101,7 +114,13 @@ export function Fehlerkatalog() {
       key: 'del',
       header: '',
       render: (r) => (
-        <button className="linklike" onClick={() => confirm('Zuordnung löschen? Künftige Fälle dieser Familie bekommen dann keinen Vorschlag mehr.') && deleteFamily.mutate({ kind: r.kind, family_key: r.family_key })}>
+        <button
+          className="linklike"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (confirm('Zuordnung löschen? Künftige Fälle dieser Familie bekommen dann keinen Vorschlag mehr.')) deleteFamily.mutate({ kind: r.kind, family_key: r.family_key })
+          }}
+        >
           löschen
         </button>
       ),
@@ -115,7 +134,7 @@ export function Fehlerkatalog() {
       key: 'cat',
       header: 'Kategorie',
       render: (r) => (
-        <span className="suggestion">
+        <span className="suggestion" onClick={(e) => e.stopPropagation()}>
           <CategorySelect value={r.category} onChange={(c) => upsertMessage.mutate({ kind: r.kind, message_norm: r.message_norm, category: c })} />
           {mixed(r.category_counts) ? <span className="conf conf-niedrig">uneinheitlich</span> : null}
         </span>
@@ -173,6 +192,7 @@ export function Fehlerkatalog() {
               columns={openCols}
               rows={openRows}
               rowKey={(r) => `${r.kind}::${r.family_key}`}
+              onRowClick={(r) => setOpened({ tab: 'offen', row: r })}
               emptyText={open.isLoading ? 'Lade offene Punkte…' : 'Jede Ursache der offenen Punkte ist im Katalog zugeordnet.'}
               initialSort={{ key: 'n', dir: 'desc' }}
               maxRows={300}
@@ -183,11 +203,64 @@ export function Fehlerkatalog() {
             </div>
           </>
         ) : tab === 'familien' ? (
-          <DataTable columns={famCols} rows={famRows} rowKey={(r) => `${r.kind}::${r.family_key}`} emptyText="Noch keine Familien — Arbeitsmappe importieren oder Punkte bestätigen." initialSort={{ key: 'n', dir: 'desc' }} maxRows={300} />
+          <DataTable
+            columns={famCols}
+            rows={famRows}
+            rowKey={(r) => `${r.kind}::${r.family_key}`}
+            onRowClick={(r) => setOpened({ tab: 'familien', row: r })}
+            emptyText="Noch keine Familien — Arbeitsmappe importieren oder Punkte bestätigen."
+            initialSort={{ key: 'n', dir: 'desc' }}
+            maxRows={300}
+          />
         ) : (
-          <DataTable columns={msgCols} rows={msgRows} rowKey={(r) => `${r.kind}::${r.message_norm}`} emptyText="Noch keine Meldungen." initialSort={{ key: 'n', dir: 'desc' }} maxRows={300} />
+          <DataTable
+            columns={msgCols}
+            rows={msgRows}
+            rowKey={(r) => `${r.kind}::${r.message_norm}`}
+            onRowClick={(r) => setOpened({ tab: 'meldungen', row: r })}
+            emptyText="Noch keine Meldungen."
+            initialSort={{ key: 'n', dir: 'desc' }}
+            maxRows={300}
+          />
         )}
+        <div className="card-sub" style={{ marginTop: 8 }}>
+          Zeile anklicken zeigt die Fälle dahinter (Automatisierung, Zeitpunkt, Originaltext, Entscheidung) mit Sprung zum Tag.
+        </div>
       </div>
+
+      {opened?.tab === 'offen' ? (
+        <FamilyDrawer
+          selector={{ kind: opened.row.kind, family_key: opened.row.family_key }}
+          title={opened.row.example}
+          category={null}
+          focusKey={`${opened.row.kind}::${opened.row.family_key}`}
+          onCategory={(c) => {
+            assign(opened.row, c)
+            setOpened(null)
+          }}
+          onClose={() => setOpened(null)}
+        />
+      ) : opened?.tab === 'familien' ? (
+        <FamilyDrawer
+          selector={{ kind: opened.row.kind, family_key: opened.row.family_key }}
+          title={opened.row.family_key}
+          category={opened.row.category}
+          source={opened.row.source}
+          focusKey={`${opened.row.kind}::${opened.row.family_key}`}
+          onCategory={(c) => upsertFamily.mutate({ kind: opened.row.kind, family_key: opened.row.family_key, category: c })}
+          onClose={() => setOpened(null)}
+        />
+      ) : opened?.tab === 'meldungen' ? (
+        <FamilyDrawer
+          selector={{ kind: opened.row.kind, message_norm: opened.row.message_norm }}
+          title={opened.row.message_norm}
+          category={opened.row.category}
+          source={opened.row.source}
+          focusKey={`${opened.row.kind}::${opened.row.message_norm}`}
+          onCategory={(c) => upsertMessage.mutate({ kind: opened.row.kind, message_norm: opened.row.message_norm, category: c })}
+          onClose={() => setOpened(null)}
+        />
+      ) : null}
 
       <div className="card">
         <div className="card-head">
